@@ -10,20 +10,27 @@ xtensor_dep = dependency('xtensor',
 
 python = import('python').find_installation('python3')
 
-npy_incstr = run_command(
-    [python, '-c', 'import numpy; print(numpy.get_include())'],
-    check: false).stdout().strip()
+numpy_dep = dependency('numpy', required: false)
 
-if (npy_incstr == '')
-    error('Unable to find numpy (Looking for it using ' + python.path() + ')')
+# TODO: Remove this once we can require a minimum meson version of 1.4.0 and a minimum numpy version
+# of 2.0.0
+if is_disabler(numpy_dep)
+    npy_incstr = run_command(
+        [python, '-c', 'import numpy; print(numpy.get_include())'],
+        check: false).stdout().strip()
+
+    if (npy_incstr == '')
+        error('Unable to find numpy (Looking for it using ' + python.path() + ')')
+    endif
+
+    numpy_dep = declare_dependency(include_directories: npy_incstr)
 endif
 
 xtensor_python_dep = declare_dependency(
-    include_directories: [include_directories('include', is_system: true),
-        include_directories(npy_incstr, is_system: true)],
-    dependencies:[xtensor_dep, pybind11_dep])
+    include_directories: include_directories('include', is_system: true),
+    dependencies:[xtensor_dep, pybind11_dep, numpy_dep])
 
-extra_cflags = ['-I' + npy_incstr]
+extra_cflags = []
 
 # Workaround from mesonbuild/meson github issue 2550
 if meson.is_subproject()
