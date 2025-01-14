@@ -46,6 +46,15 @@ from typing import List
 from typing import Optional
 import numpy as np
 
+# Backwards compatibility for typing numpy arrays
+NumpyArray = np.ndarray # represents a 1 dimensional numpy array
+NumpyMatrix = np.ndarray # represents a 2 dimensional numpy array
+try:
+    from numpy.typing import NDArray
+    NumpyArray = NumpyMatrix = NDArray
+except ImportError:
+    pass
+
 {{aspn_imports}}
 
 {{enum_classes}}
@@ -199,9 +208,9 @@ class AspnBase(Protocol):
 
         typehint = f"List[{type_name}]"
         if isinstance(data_len, int):
-            typehint = f"np.ndarray[{type_name}, ({data_len})]"
+            typehint = f"NumpyArray[{type_name}]"
         elif type_name in ["float", "int"]:
-            typehint = f"np.ndarray[{type_name}]"
+            typehint = f"NumpyArray[{type_name}]"
 
         if nullable:
             typehint = f"Optional[{typehint}]"
@@ -227,17 +236,7 @@ class AspnBase(Protocol):
         doc_string: str,
         nullable=None,
     ):
-        x_typehint = None
-        y_typehint = None
-        if self.current_struct is None:
-            return
-        try:
-            x_typehint = int(x)
-            y_typehint = int(y)
-        except ValueError:
-            pass
-
-        typehint = f"np.ndarray[{type_name}, ({x_typehint}, {y_typehint})]"
+        typehint = f"NumpyMatrix[{type_name}]"
         if nullable:
             typehint = f"Optional[{typehint}]"
         field_str = f"{field_name}: {typehint}"
