@@ -14,7 +14,7 @@ numpy_dep = dependency('numpy', required: false)
 
 # TODO: Remove this once we can require a minimum meson version of 1.4.0 and a minimum numpy version
 # of 2.0.0
-if is_disabler(numpy_dep)
+if is_disabler(numpy_dep) or not numpy_dep.found()
     npy_incstr = run_command(
         [python, '-c', 'import numpy; print(numpy.get_include())'],
         check: false).stdout().strip()
