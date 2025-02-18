@@ -272,11 +272,15 @@ if not get_option('aspn-cpp-xtensor-py').disabled()
     stubgen = find_program('stubgen', required : false)
 
     if (stubgen.found())
+
+        env = environment()
+        env.append('PYTHONPATH', ':' + aspn_xtensor_python_lib_location)
+
         custom_target('stubs',
                       input : python_bindings_lib,
                       output : ['aspn23_xtensor.pyi' ],
                       command : [stubgen, '-p',  'aspn23_xtensor', '-o', meson.current_build_dir()],
-                      env: {{'PYTHONPATH' : aspn_xtensor_python_lib_location}},
+                      env: env,
                       build_by_default : true,
                       install: true,
                       install_tag: 'python-runtime',
