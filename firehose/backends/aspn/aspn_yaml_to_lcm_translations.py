@@ -150,7 +150,7 @@ from .lcm_translations import (
         # bounded v unbounded ndarrays.
         if isinstance(data_len, int):
             self.current_struct.assignments.append(
-                f"{field_name} = old.{field_name}.tolist()"
+                f"{field_name} = old.{field_name}"
             )
 
             # covariance has a custom extra field that we need to add for counting.
@@ -161,7 +161,7 @@ from .lcm_translations import (
             return
         elif type_name in ["float", "int"]:
             self.current_struct.assignments.append(
-                f"{field_name} = old.{field_name}.tolist()"
+                f"{field_name} = old.{field_name}"
             )
 
             # these fields have a custom extra field that needs to be added for
@@ -215,7 +215,7 @@ from .lcm_translations import (
             return
 
         self.current_struct.assignments.append(
-            f"{field_name} = old.{field_name}.tolist()"
+            f"{field_name} = old.{field_name}"
         )
 
     def process_outer_managed_pointer_field(
