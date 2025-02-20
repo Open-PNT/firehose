@@ -269,7 +269,14 @@ if not get_option('aspn-cpp-xtensor-py').disabled()
 
     ### Stubgen
 
-    stubgen = find_program('stubgen', required : false)
+    # For the case of "pip install .", append the location that dependencies get installed to in the
+    # isolated build environment. These dependencies end up on the Python path but not the system
+    # path, because it's not a full virtual environment.
+    result = run_command(python, '-c', 'import os; print(os.environ["PYTHONPATH"])')
+    python_path = result.stdout().strip()
+    bin_path = python_path / '../overlay/local/bin/stubgen'
+
+    stubgen = find_program('stubgen', bin_path, required : false)
 
     if (stubgen.found())
 
