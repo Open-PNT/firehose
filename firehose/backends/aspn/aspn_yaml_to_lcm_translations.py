@@ -79,7 +79,7 @@ class AspnYamlToLCMTranslations(Backend):
                 for it in struct.assignments + struct.assignments_from_lcm
             ]
             function = struct.from_lcm_template.format(
-                fields=', '.join(struct.assignments)
+                fields=', '.join(assignments)
             )
 
         return function
