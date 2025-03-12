@@ -228,7 +228,7 @@ from .lcm_translations import (
             return
 
         self.current_struct.assignments.append(
-            f"{field_name} = old.{field_name}"
+            f"{field_name} = np.array(old.{field_name})"
         )
 
     def process_outer_managed_pointer_field(
