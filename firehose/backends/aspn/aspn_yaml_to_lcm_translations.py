@@ -174,11 +174,12 @@ from .lcm_translations import (
                 self.current_struct.assignments.append(
                     f"{field_name}_size = len(old.{field_name})"
                 )
-            elif field_name in [
-                "error_model_params",
-                "integrity",
-                "model_coefficients",
-            ]:
+            elif field_name in ["error_model_params"]:
+                if self.current_struct.to_lcm:
+                    self.current_struct.assignments.append(
+                        f"num_{field_name} = len(old.{field_name})"
+                    )
+            elif field_name in ["integrity", "model_coefficients"]:
                 self.current_struct.assignments.append(
                     f"num_{field_name} = len(old.{field_name})"
                 )
