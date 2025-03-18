@@ -529,7 +529,6 @@ def prompt_for_targets(targets: List[FirehoseTarget]) -> List[FirehoseTarget]:
 
 
 def get_args() -> argparse.Namespace:
-
     def normalized_path(path: str) -> str:
         """
         Normalizes a path (including ~ expansion).
