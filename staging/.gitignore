@@ -1,3 +1,5 @@
 subprojects/eigen/
 subprojects/xtensor/
 subprojects/xtl/
+subprojects/xtensor-python/
+subprojects/pybind11-*/
