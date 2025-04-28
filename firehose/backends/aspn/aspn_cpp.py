@@ -269,24 +269,19 @@ if not get_option('aspn-cpp-xtensor-py').disabled()
 
     ### Stubgen
 
-    # For the case of "pip install .", append the location that dependencies get installed to in the
-    # isolated build environment. These dependencies end up on the Python path but not the system
-    # path, because it's not a full virtual environment.
-    result = run_command(python, '-c', 'import os; print(os.environ["PYTHONPATH"])')
-    python_path = result.stdout().strip()
-    bin_path = python_path / '../overlay/local/bin/stubgen'
+    python_with_mypy = import('python').find_installation('python3', modules: ['mypy'], required: false)
 
-    stubgen = find_program('stubgen', bin_path, required : false)
+    if (python_with_mypy.found())
 
-    if (stubgen.found())
+        generate_stubs = meson.project_source_root() / 'util' / 'generate_stubs.py'
 
         env = environment()
-        env.append('PYTHONPATH', ':' + aspn_xtensor_python_lib_location)
+        env.append('PYTHONPATH', aspn_xtensor_python_lib_location)
 
         custom_target('stubs',
                       input : python_bindings_lib,
                       output : ['aspn23_xtensor.pyi' ],
-                      command : [stubgen, '-p',  'aspn23_xtensor', '-o', meson.current_build_dir()],
+                      command : [python_with_mypy, generate_stubs, '-paspn23_xtensor', '-o' + meson.current_build_dir()],
                       env: env,
                       build_by_default : true,
                       install: true,
