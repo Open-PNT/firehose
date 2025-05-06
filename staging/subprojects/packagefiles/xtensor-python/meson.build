@@ -28,7 +28,8 @@ endif
 
 xtensor_python_dep = declare_dependency(
     include_directories: include_directories('include', is_system: true),
-    dependencies:[xtensor_dep, pybind11_dep, numpy_dep])
+    # Numpy should be listed first (#62).
+    dependencies:[numpy_dep, xtensor_dep, pybind11_dep])
 
 extra_cflags = []
 
