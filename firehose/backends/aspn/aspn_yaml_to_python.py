@@ -95,7 +95,7 @@ class AspnYamlToPython(Backend):
         )
 
     def _add_attribute_docstring(
-        self, field_name, typehint, docstring, limit=88, nullable=False
+        self, field_name, typehint, docstring, limit=100, nullable=False
     ):
         type = typehint if not nullable else f"Optional[{typehint}]"
         lines = [f"\n{INDENT}{field_name} - {type}:"]
@@ -333,7 +333,7 @@ class AspnBase(Protocol):
         if self.current_struct is None:
             return
         enum_docstr = format_docstring(
-            doc_string, indent=INDENT, style='"""', char_limit=88
+            doc_string, indent=INDENT, style='"""', char_limit=100
         )
 
         self.current_struct.enum_classes_buf.append(
@@ -352,7 +352,7 @@ class AspnBase(Protocol):
                 enum_values_doc_strs[i],
                 indent=INDENT,
                 style='"""',
-                char_limit=88,
+                char_limit=100,
             )
 
             self.current_struct.enum_classes_buf.append(
