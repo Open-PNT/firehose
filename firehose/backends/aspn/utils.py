@@ -435,30 +435,9 @@ def _get_line_indent(line):
     return ' ' * indent_len if indent_len > 0 else ''
 
 
-def format_and_write_lcm_file(file_content, out_path):
-    # TODO - see if there is actual formatting we should do here
-    formatted_lines = []
-    for line in file_content.split('\n'):
-        UNITS_DOCSTR = '. Units: '
-        LENGTH_DOCSTR = '. Length: '
-        if UNITS_DOCSTR in line:
-            lb_index = line.find(UNITS_DOCSTR)
-            if lb_index != -1:
-                indent = _get_line_indent(line)
-                formatted_lines.append(line[:lb_index])
-                formatted_lines.append(f'{indent}// {line[lb_index+2:]}')
-        elif LENGTH_DOCSTR in line:
-            lb_index = line.find(UNITS_DOCSTR)
-            if lb_index != -1:
-                indent = _get_line_indent(line)
-                formatted_lines.append(line[:lb_index])
-                formatted_lines.append(f'{indent}// {line[lb_index+2:]}')
-        else:
-            formatted_lines.append(line)
-        # TODO- need recursion or just another step here for when both
-        # units and length are on the same line.  Basically rewrite this
+def write_file(file_content, out_path):
     with open(out_path, "a", encoding="utf-8") as f:
-        f.write('\n'.join(formatted_lines))
+        f.write(file_content)
 
 
 def format_and_write_to_file(file_content, out_path):
@@ -473,16 +452,12 @@ def format_and_write_to_file(file_content, out_path):
         clang_format_file_contents(file_content, out_path)
     elif file_extension == '.idl':
         format_and_write_dds_file(file_content, out_path)
-    elif file_extension == '.lcm':
-        format_and_write_lcm_file(file_content, out_path)
     elif file_extension == '.xmi':
         format_and_write_xmi_file(file_content, out_path)
     elif file_extension == '.py':
         format_and_write_py_file(file_content, out_path)
-    else:
-        raise NotImplementedError(
-            "File formatter for this file type does not exist yet!"
-        )
+    else:  # other file extensions, like LCM, don't require formatting
+        write_file(file_content, out_path)
 
 
 def format_c_codegen_array(lines):

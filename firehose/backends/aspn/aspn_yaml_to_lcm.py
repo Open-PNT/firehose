@@ -6,9 +6,8 @@ from typing import List, Union
 from pathlib import Path
 from firehose.backends import Backend
 from firehose.backends.aspn.utils import (
-    ASPN_TO_LCM_MAPPINGS,
     INDENT,
-    format_and_write_lcm_file,
+    format_and_write_to_file,
     format_docstring,
     ASPN_PREFIX,
 )
@@ -104,7 +103,7 @@ class AspnYamlToLCM(Backend):
             output_filename = join(
                 self.output_folder, f"{struct.struct_name}.lcm"
             )
-            format_and_write_lcm_file(file_contents, output_filename)
+            format_and_write_to_file(file_contents, output_filename)
         self._generate_meson_build(base_filenames)
 
     def _generate_meson_build(self, base_filenames):
@@ -142,9 +141,7 @@ class AspnYamlToLCM(Backend):
         deref="",
         nullable: bool = False,
     ):
-        docstr = format_docstring(
-            doc_string, indent=INDENT, style='//', char_limit=999
-        )
+        docstr = format_docstring(doc_string, indent=INDENT, style='//')
         field_str = f"{type_name} {field_name}[{data_len}]"
         self.current_struct.struct_fields_buf.append(
             f"{docstr}\n{INDENT}{field_str}"
@@ -159,9 +156,7 @@ class AspnYamlToLCM(Backend):
         doc_string: str,
         nullable: bool = False,
     ):
-        docstr = format_docstring(
-            doc_string, indent=INDENT, style='//', char_limit=999
-        )
+        docstr = format_docstring(doc_string, indent=INDENT, style='//')
         field_str = f"{type_name} {field_name}[{x}][{y}]"
         self.current_struct.struct_fields_buf.append(
             f"{docstr}\n{INDENT}{field_str}"
@@ -206,9 +201,7 @@ class AspnYamlToLCM(Backend):
         doc_string: str,
         nullable: bool = False,
     ):
-        docstr = format_docstring(
-            doc_string, indent=INDENT, style='//', char_limit=999
-        )
+        docstr = format_docstring(doc_string, indent=INDENT, style='//')
         field_str = f"{field_type_name} {field_name}"
         self.current_struct.struct_fields_buf.append(
             f"{docstr}\n{INDENT}{field_str}"
