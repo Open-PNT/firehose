@@ -9,12 +9,21 @@ ASPN_NULLABILITY_MACRO_START = 'ASPN_ASSUME_NONNULL_BEGIN'
 ASPN_NULLABILITY_MACRO_END = 'ASPN_ASSUME_NONNULL_END'
 ASPN_NULLABLE_MACRO = 'ASPN_NULLABLE'
 ASPN_DISABLE_NULLABILITY = 'ASPN_DISABLE_NULLABILITY'
-DOCSTRING_TEMPLATE = """
-{indent}/**
-{indent} * {docstring}
-{indent} */
-"""
-
+C_MULTILINE_TEMPLATE = dedent(
+    '''
+    {indent}/**
+    {indent} * {docstr}
+    {indent} */
+    '''
+)
+PY_MULTILINE_TEMPLATE = dedent(
+    '''
+    {indent}"""
+    {indent}{docstr}
+    {indent}"""
+    '''
+)
+PREFIX_MAP = {'//': '// ', '#': '# ', '/**': ' * ', '"""': ''}
 INDENT = 4 * " "
 
 # Mappings of ASPN specification types to C types
@@ -125,7 +134,7 @@ def is_length_field(field_name: str) -> bool:
 
 
 def char_limit_docstr(
-    string: str, indent: str = "", limit: int = 80, prefix='*'
+    string: str, indent: str = "", limit: int = 100, prefix='*'
 ) -> str:
     lines = []
     current_line = f"{indent}"
@@ -145,31 +154,24 @@ def char_limit_docstr(
 
 
 def format_docstring(
-    string: str, indent: str = "", char_limit: int = 80, style='/**'
+    string: str, indent: str = '', char_limit: int = 100, style='/**'
 ) -> str:
-    # Simple double slash prefixed comment style
-    if style == '//':
-        return f'{indent}// ' + char_limit_docstr(
-            string, indent, char_limit, prefix='// '
-        )
+    prefix = PREFIX_MAP[style]
+    # Wrap each long line, but preserve original newlines
+    docstr = f'\n{indent}{prefix}'.join(
+        char_limit_docstr(line, indent, char_limit, prefix)
+        for line in string.splitlines()
+    )
+    # Simple double slash or pound prefixed comment style
+    if style in ('//', '#'):
+        return f'{indent}{prefix}' + docstr
     # C/C++/javascript/etc multiline comment
     elif style == '/**':
-        return DOCSTRING_TEMPLATE.format(
-            indent=indent,
-            docstring=char_limit_docstr(
-                string, indent, char_limit, prefix=' * '
-            ),
-        )
+        return C_MULTILINE_TEMPLATE.format(indent=indent, docstr=docstr)
     # Python triple quote multi-line comment
     elif style == '"""':
-        docstr = char_limit_docstr(string, indent, char_limit, prefix='')
-        return f'''
-{indent}"""
-{indent}{docstr}
-{indent}"""
-'''
-    elif style == '#':
-        return char_limit_docstr(string, indent, char_limit, prefix='# ')
+        return PY_MULTILINE_TEMPLATE.format(indent=indent, docstr=docstr)
+    return ''
 
 
 def name_to_enum_field(
