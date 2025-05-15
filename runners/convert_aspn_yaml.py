@@ -25,14 +25,12 @@ from firehose.backends.aspn.utils import (
 
 def generate_doc_string(yaml_field, codegen_class, is_enum):
     if codegen_class == 'AspnYamlToLCM' and not is_enum:
-        description = yaml_field.get('description', None)
-        units = yaml_field.get('units', 'none')
+        description = yaml_field.get('description', '').strip('\n')
+        units = yaml_field.get('units', 'none').strip('\n')
         length = yaml_field.get('length', None)
-        docstr = ''
-        docstr += f'Description: {description}\n'
-        docstr += f'Units: {units}\n'
+        docstr = f'Description: {description}\nUnits: {units}'
         if length is not None:
-            docstr += f'Length: {length}\n'
+            docstr += f'\nLength: {length}'
         return docstr
     else:
         return yaml_field.get('description', '')
