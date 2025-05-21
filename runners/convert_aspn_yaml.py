@@ -11,6 +11,7 @@ from firehose.backends import (
     AspnCMarshalingBackend,
     AspnYamlToDDS,
     AspnYamlToLCM,
+    AspnYamlToROS,
     AspnYamlToXMI,
     AspnYamlToLCMTranslations,
     Backend,
@@ -24,7 +25,7 @@ from firehose.backends.aspn.utils import (
 
 
 def generate_doc_string(yaml_field, codegen_class, is_enum):
-    if codegen_class == 'AspnYamlToLCM' and not is_enum:
+    if codegen_class in ('AspnYamlToLCM', 'AspnYamlToROS') and not is_enum:
         description = yaml_field.get('description', '').strip('\n')
         units = yaml_field.get('units', 'none').strip('\n')
         length = yaml_field.get('length', None)
@@ -186,6 +187,7 @@ def main():
         'dds': AspnYamlToDDS,
         'lcm': AspnYamlToLCM,
         'lcmtranslations': AspnYamlToLCMTranslations,
+        'ros': AspnYamlToROS,
         'py': AspnPyBackend,
         'xmi': AspnYamlToXMI,
         'marshal_lcm_c': AspnCMarshalingBackend,
