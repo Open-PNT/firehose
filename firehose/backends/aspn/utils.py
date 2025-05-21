@@ -87,6 +87,21 @@ ASPN_TO_PYTHON_MAPPINGS = {
     'int64': 'int',
 }
 
+# Mappings of ASPN specification types to ROS msg datatypes
+ASPN_TO_ROS_MAPPINGS = {
+    'bool': 'bool',
+    'float32': 'float32',
+    'float64': 'float64',
+    'uint8': 'uint8',
+    'uint16': 'uint16',
+    'uint32': 'uint32',
+    'uint64': 'uint64',
+    'int8': 'int8',
+    'int16': 'int16',
+    'int32': 'int32',
+    'int64': 'int64',
+}
+
 # Lookup mappings for each backend:
 # (type_mappings, Struct/Class name)
 CODEGEN_MAPPINGS = {
@@ -107,6 +122,7 @@ CODEGEN_MAPPINGS = {
         ASPN_TO_PYTHON_MAPPINGS,
         lambda x: snake_to_pascal(x),
     ),
+    'AspnYamlToROS': (ASPN_TO_ROS_MAPPINGS, lambda x: snake_to_pascal(x)),
     'AspnYamlToDDS': (ASPN_TO_DDS_MAPPINGS, lambda x: snake_to_pascal(x)),
     'AspnPyBackend': (ASPN_TO_PYTHON_MAPPINGS, lambda x: snake_to_pascal(x)),
 }
@@ -202,6 +218,7 @@ def name_to_enum_value(codegen_instance, enum_name: str) -> str:
     if codegen_instance.__class__.__name__ in [
         'AspnYamlToLCM',
         'AspnYamlToLCMTranslations',
+        'AspnYamlToROS',
     ]:
         return enum_name
     elif codegen_instance.__class__.__name__ in ['AspnYamlToDDS']:

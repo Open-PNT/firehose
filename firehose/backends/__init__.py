@@ -6,6 +6,7 @@ from .aspn.aspn_yaml_to_lcm_translations import AspnYamlToLCMTranslations
 from .aspn.aspn_c_marshaling import AspnCMarshalingBackend
 from .aspn.aspn_yaml_to_dds import AspnYamlToDDS
 from .aspn.aspn_yaml_to_lcm import AspnYamlToLCM
+from .aspn.aspn_yaml_to_ros import AspnYamlToROS
 from .aspn.aspn_yaml_to_python import AspnYamlToPython
 from .aspn.aspn_yaml_to_xmi import AspnYamlToXMI
 from .docstring_extractor import DocstringExtractor
@@ -19,6 +20,7 @@ __all__ = [
     "AspnCMarshalingBackend",
     "AspnYamlToDDS",
     "AspnYamlToLCM",
+    "AspnYamlToROS",
     "AspnYamlToPython",
     "AspnYamlToXMI",
     "DocstringExtractor",

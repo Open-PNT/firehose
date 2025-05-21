@@ -730,6 +730,19 @@ def create_targets(args: argparse.Namespace) -> None:
             ],
             dependencies=["aspn_dds_idl"],
         ),
+        FirehoseTarget(
+            name="aspn_ros",
+            runner=ASPN_CODEGEN_RUNNER,
+            cmd_args=[
+                args.aspn_icd_dir,
+                "-d",
+                join(
+                    args.output_dir, "aspn-ros", "src", "aspn23_ros_interfaces"
+                ),
+                "-o",
+                "ros",
+            ],
+        ),
     ]
 
     # Create a mapping from target names to FirehoseTarget instances
