@@ -184,8 +184,8 @@ class AspnCMarshalingBackend(Backend):
         self,
         field_name: str,
         type_name: str,
-        x: int,
-        y: int,
+        x: int | str,
+        y: int | str,
         doc_string: str,
         nullable: bool = False,
     ):

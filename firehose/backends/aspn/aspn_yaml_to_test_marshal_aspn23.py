@@ -504,8 +504,8 @@ class AspnYamlToTestMarshalAspn23(Backend):
         self,
         field_name: str,
         type_name: str,
-        x: int,
-        y: int,
+        x: int | str,
+        y: int | str,
         doc_string: str,
         nullable: bool = False,
     ):
@@ -523,7 +523,7 @@ class AspnYamlToTestMarshalAspn23(Backend):
             seed_increment = 1
             compare = "g_assert_cmpint"
         if (
-            (not x.isdigit())
+            (not isinstance(x, int))
             and field_name == "covariance"
             or field_name == "position_covariance"
             or field_name == "k"
