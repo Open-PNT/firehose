@@ -111,6 +111,11 @@ def process_struct_field(
     if match:
         x = match.group(1)
         y = match.group(2)
+        try:
+            x = int(x)
+            y = int(y)
+        except ValueError:
+            pass
         i = field_type.index("[")
         f_type = field_type[:i]
         if field_name == "covariance" and x == y:
