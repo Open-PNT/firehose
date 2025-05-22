@@ -149,14 +149,17 @@ from .lcm_translations import (
             return
 
         if self.current_struct.to_lcm:
+            qualifier = ""
+            if nullable:
+                qualifier = f" if old.{field_name} is not None else []"
             if isinstance(data_len, int) or type_name in PRIMITIVES:
                 self.current_struct.assignments.append(
-                    f"{field_name} = old.{field_name}.tolist()"
+                    f"{field_name} = old.{field_name}.tolist()" + qualifier
                 )
             else:
                 self.current_struct.assignments.append(
                     f"{field_name} = [{pascal_to_snake(type_name)}_to_lcm(x) "
-                    f"for x in old.{field_name}]"
+                    f"for x in old.{field_name}]" + qualifier
                 )
         else:
             if isinstance(data_len, int) or type_name in PRIMITIVES:
@@ -179,8 +182,11 @@ from .lcm_translations import (
             ):
                 return
 
+            qualifier = ""
+            if nullable:
+                qualifier = f" if old.{field_name} is not None else 0"
             self.current_struct.assignments.append(
-                f"{data_len} = len(old.{field_name})"
+                f"{data_len} = len(old.{field_name})" + qualifier
             )
 
     def process_matrix_field(
@@ -244,21 +250,39 @@ from .lcm_translations import (
         if is_length_field(field_name):
             return
 
-        if field_type_name in PRIMITIVES:
-            self.current_struct.assignments.append(
-                f"{field_name} = old.{field_name}"
-            )
-        elif self.current_struct.to_lcm:
-            self.current_struct.assignments.append(
-                f"{field_name} = {pascal_to_snake(field_type_name)}_to_lcm("\
-                f"old.{field_name})"
-            )
+        if self.current_struct.to_lcm:
+            qualifier = ""
+            if field_type_name in PRIMITIVES:
+                if nullable:
+                    # LCM cannot handle None fields, so these must be
+                    # default-initalized
+                    qualifier = (
+                        f" if old.{field_name} is not None else "
+                        f"{field_type_name}()"
+                    )
+                self.current_struct.assignments.append(
+                    f"{field_name} = old.{field_name}" + qualifier
+                )
+            else:
+                if nullable:
+                    qualifier = (
+                        f" if old.{field_name} is not None else "
+                        f"Lcm{field_type_name}()"
+                    )
+                self.current_struct.assignments.append(
+                    f"{field_name} = {pascal_to_snake(field_type_name)}"
+                    f"_to_lcm(old.{field_name})" + qualifier
+                )
         else:
-            self.current_struct.assignments.append(
-                f"{field_name} = lcm_to_{pascal_to_snake(field_type_name)}("\
-                f"old.{field_name})"
-            )
-
+            if field_type_name in PRIMITIVES:
+                self.current_struct.assignments.append(
+                    f"{field_name} = old.{field_name}"
+                )
+            else:
+                self.current_struct.assignments.append(
+                    f"{field_name} = lcm_to_"
+                    f"{pascal_to_snake(field_type_name)}(old.{field_name})"
+                )
 
     def process_class_docstring(self, doc_string: str, nullable=None):
         pass
