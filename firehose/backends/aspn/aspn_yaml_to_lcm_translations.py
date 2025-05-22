@@ -21,12 +21,7 @@ class Struct:
         # this field allows us to define whether we are going to or from lcm.
         # defaults to true
         self.to_lcm = to_lcm
-        # Assignments of primitives
         self.assignments: list[str] = []
-        # Assignments of ASPN types, which dispatch to a *_to_lcm function
-        self.assignments_to_lcm: list[str] = []
-        # Assignments of ASPN types, which dispatch to a lcm_to_* function
-        self.assignments_from_lcm: list[str] = []
         self.imports_aspn = []
         self.to_lcm_template = f"""
 def {pascal_to_snake(pascal_struct_name)}_to_lcm(old: {pascal_struct_name}) -> Lcm{pascal_struct_name}:
@@ -64,17 +59,13 @@ class AspnYamlToLCMTranslations(Backend):
 
     def _generate_lcm_function(self, struct: Struct):
         if struct.to_lcm:
-            assignments = [
-                f"{INDENT}msg.{it}"
-                for it in struct.assignments + struct.assignments_to_lcm
-            ]
+            assignments = [f"{INDENT}msg.{it}" for it in struct.assignments]
             function = struct.to_lcm_template.format(
                 assignments='\n'.join(assignments)
             )
         else:
             assignments = [
-                f"{INDENT}{INDENT}{it}"
-                for it in struct.assignments + struct.assignments_from_lcm
+                f"{INDENT}{INDENT}{it}" for it in struct.assignments
             ]
             function = struct.from_lcm_template.format(
                 fields=', '.join(assignments)
@@ -161,12 +152,13 @@ from .lcm_translations import (
             self.current_struct.assignments.append(
                 f"{field_name} = old.{field_name}"
             )
-        else:
-            self.current_struct.assignments_to_lcm.append(
+        elif self.current_struct.to_lcm:
+            self.current_struct.assignments.append(
                 f"{field_name} = [{pascal_to_snake(type_name)}_to_lcm(x) "\
                 f"for x in old.{field_name}]"
             )
-            self.current_struct.assignments_from_lcm.append(
+        else:
+            self.current_struct.assignments.append(
                 f"{field_name} = [lcm_to_{pascal_to_snake(type_name)}(x) "\
                 f"for x in old.{field_name}]"
             )
@@ -251,20 +243,21 @@ from .lcm_translations import (
         if is_length_field(field_name):
             return
 
-        # If it is not a primitive, we need to call the generation for that class.
-        # We can use `in` here because we rooted out all the other ones.
-        if not any(field_type_name in it for it in PRIMITIVES):
-            self.current_struct.assignments_to_lcm.append(
-                f"{field_name} = {pascal_to_snake(field_type_name)}_to_lcm(old.{field_name})"
+        if field_type_name in PRIMITIVES:
+            self.current_struct.assignments.append(
+                f"{field_name} = old.{field_name}"
             )
-            self.current_struct.assignments_from_lcm.append(
-                f"{field_name} = lcm_to_{pascal_to_snake(field_type_name)}(old.{field_name})"
+        elif self.current_struct.to_lcm:
+            self.current_struct.assignments.append(
+                f"{field_name} = {pascal_to_snake(field_type_name)}_to_lcm("\
+                f"old.{field_name})"
             )
-            return
+        else:
+            self.current_struct.assignments.append(
+                f"{field_name} = lcm_to_{pascal_to_snake(field_type_name)}("\
+                f"old.{field_name})"
+            )
 
-        self.current_struct.assignments.append(
-            f"{field_name} = old.{field_name}"
-        )
 
     def process_class_docstring(self, doc_string: str, nullable=None):
         pass
