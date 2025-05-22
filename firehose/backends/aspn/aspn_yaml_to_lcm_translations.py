@@ -148,20 +148,26 @@ from .lcm_translations import (
         if self.current_struct is None:
             return
 
-        if isinstance(data_len, int) or type_name in PRIMITIVES:
-            self.current_struct.assignments.append(
-                f"{field_name} = old.{field_name}"
-            )
-        elif self.current_struct.to_lcm:
-            self.current_struct.assignments.append(
-                f"{field_name} = [{pascal_to_snake(type_name)}_to_lcm(x) "\
-                f"for x in old.{field_name}]"
-            )
+        if self.current_struct.to_lcm:
+            if isinstance(data_len, int) or type_name in PRIMITIVES:
+                self.current_struct.assignments.append(
+                    f"{field_name} = old.{field_name}.tolist()"
+                )
+            else:
+                self.current_struct.assignments.append(
+                    f"{field_name} = [{pascal_to_snake(type_name)}_to_lcm(x) "
+                    f"for x in old.{field_name}]"
+                )
         else:
-            self.current_struct.assignments.append(
-                f"{field_name} = [lcm_to_{pascal_to_snake(type_name)}(x) "\
-                f"for x in old.{field_name}]"
-            )
+            if isinstance(data_len, int) or type_name in PRIMITIVES:
+                self.current_struct.assignments.append(
+                    f"{field_name} = np.array(old.{field_name})"
+                )
+            else:
+                self.current_struct.assignments.append(
+                    f"{field_name} = [lcm_to_{pascal_to_snake(type_name)}(x) "
+                    f"for x in old.{field_name}]"
+                )
 
         # In lcm, add length fields missing from aspn-py
         if self.current_struct.to_lcm and isinstance(data_len, str):
@@ -186,18 +192,13 @@ from .lcm_translations import (
         doc_string: str,
         nullable=None,
     ):
-        if self.current_struct is None:
-            return
-
-        self.current_struct.assignments.append(
-            f"{field_name} = np.array(old.{field_name})"
+        if x != y:
+            raise NotImplementedError
+        # The desired marshaling functions happens to be the same as those for
+        # a 1D array, so we can just call that generation function
+        self.process_data_pointer_field(
+            field_name, type_name, x, doc_string, nullable=nullable
         )
-
-        # In lcm, add length fields missing from aspn-py
-        if self.current_struct.to_lcm and x == y and not isinstance(x, int):
-            self.current_struct.assignments.append(
-                f"{x} = len(old.{field_name})"
-            )
 
     def process_outer_managed_pointer_field(
         self,
