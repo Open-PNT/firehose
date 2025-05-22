@@ -156,64 +156,33 @@ from .lcm_translations import (
         if self.current_struct is None:
             return
 
-        # bounded v unbounded ndarrays.
-        if isinstance(data_len, int):
+        if isinstance(data_len, int) or type_name in PRIMITIVES:
             self.current_struct.assignments.append(
                 f"{field_name} = old.{field_name}"
             )
-
-            # covariance has a custom extra field that we need to add for counting.
-            if field_name == "covariance":
-                self.current_struct.assignments.append(
-                    f"num_meas = len(old.{field_name})"
-                )
-            return
-        elif type_name in ["float", "int"]:
-            self.current_struct.assignments.append(
-                f"{field_name} = old.{field_name}"
+        else:
+            self.current_struct.assignments_to_lcm.append(
+                f"{field_name} = [{pascal_to_snake(type_name)}_to_lcm(x) "\
+                f"for x in old.{field_name}]"
+            )
+            self.current_struct.assignments_from_lcm.append(
+                f"{field_name} = [lcm_to_{pascal_to_snake(type_name)}(x) "\
+                f"for x in old.{field_name}]"
             )
 
-            # these fields have a custom extra field that needs to be added for
-            # counting them.
-            if field_name == "image_data":
-                self.current_struct.assignments.append(
-                    f"{field_name}_length = len(old.{field_name})"
-                )
-            elif field_name == "descriptor":
-                self.current_struct.assignments.append(
-                    f"{field_name}_size = len(old.{field_name})"
-                )
-            elif field_name in ["error_model_params"]:
-                if self.current_struct.to_lcm:
-                    self.current_struct.assignments.append(
-                        f"num_{field_name} = len(old.{field_name})"
-                    )
-            elif field_name in ["integrity", "model_coefficients"]:
-                self.current_struct.assignments.append(
-                    f"num_{field_name} = len(old.{field_name})"
-                )
-            elif field_name == "clock_id":
-                self.current_struct.assignments.append(
-                    f"num_obs = len(old.{field_name})"
-                )
-            elif field_name == "b":
-                self.current_struct.assignments.append(
-                    f"num_meas = len(old.{field_name})"
-                )
-            elif field_name == "data_vector":
-                self.current_struct.assignments.append(
-                    f"num_bytes = len(old.{field_name})"
-                )
-            return
+        # In lcm, add length fields missing from aspn-py
+        if self.current_struct.to_lcm and isinstance(data_len, str):
+            # Skip redundant assignments (caused by multiple arrays with the
+            # same variable length)
+            if any(
+                assign.startswith(data_len)
+                for assign in self.current_struct.assignments
+            ):
+                return
 
-        # We use ndarrays for primitives, and List for nonprimitives.
-        # At this point we know we must be a list.
-        self.current_struct.assignments_to_lcm.append(
-            f"{field_name} = [{pascal_to_snake(type_name)}_to_lcm(x) for x in old.{field_name}]"
-        )
-        self.current_struct.assignments_from_lcm.append(
-            f"{field_name} = [lcm_to_{pascal_to_snake(type_name)}(x) for x in old.{field_name}]"
-        )
+            self.current_struct.assignments.append(
+                f"{data_len} = len(old.{field_name})"
+            )
 
     def process_matrix_field(
         self,
@@ -230,6 +199,12 @@ from .lcm_translations import (
         self.current_struct.assignments.append(
             f"{field_name} = np.array(old.{field_name})"
         )
+
+        # In lcm, add length fields missing from aspn-py
+        if self.current_struct.to_lcm and x == y and not isinstance(x, int):
+            self.current_struct.assignments.append(
+                f"{x} = len(old.{field_name})"
+            )
 
     def process_outer_managed_pointer_field(
         self,
