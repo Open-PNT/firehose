@@ -57,12 +57,10 @@ class AspnYamlToLCMTranslations(Backend):
             if path.exists(filename):
                 remove(filename)
 
-    def begin_struct(self, snake_case_struct_name, to_lcm: bool = False):
+    def begin_struct(self, struct_name, to_lcm: bool = False):
         if self.current_struct is not None:
             self.structs += [self.current_struct]
-        self.current_struct = Struct(
-            f"{snake_to_pascal(snake_case_struct_name)}", to_lcm
-        )
+        self.current_struct = Struct(f"{snake_to_pascal(struct_name)}", to_lcm)
 
     def _generate_lcm_function(self, struct: Struct):
         if struct.to_lcm:
@@ -85,7 +83,10 @@ class AspnYamlToLCMTranslations(Backend):
         return function
 
     def generate(self):
-        self.structs += [self.current_struct]
+        if self.output_folder is None:
+            return
+        if self.current_struct is not None:
+            self.structs += [self.current_struct]
 
         all_aspn_imports = []
         for struct in self.structs:
