@@ -60,7 +60,7 @@ class Struct:
 
 
 class AspnYamlToLCM(Backend):
-    current_struct: Struct = None
+    current_struct: Struct | None = None
     structs: List[Struct] = []
 
     def _remove_existing_output_files(self):
@@ -87,7 +87,8 @@ class AspnYamlToLCM(Backend):
         return output
 
     def generate(self):
-        self.structs += [self.current_struct]
+        if self.current_struct is not None:
+            self.structs += [self.current_struct]
         base_filenames = []
         for struct in self.structs:
             file_contents = struct.struct_template.format(
@@ -141,6 +142,8 @@ class AspnYamlToLCM(Backend):
         deref="",
         nullable: bool = False,
     ):
+        if self.current_struct is None:
+            return
         docstr = format_docstring(doc_string, indent=INDENT, style='//')
         field_str = f"{type_name} {field_name}[{data_len}]"
         self.current_struct.struct_fields_buf.append(
@@ -151,11 +154,13 @@ class AspnYamlToLCM(Backend):
         self,
         field_name: str,
         type_name: str,
-        x: int,
-        y: int,
+        x: str | int,
+        y: str | int,
         doc_string: str,
         nullable: bool = False,
     ):
+        if self.current_struct is None:
+            return
         docstr = format_docstring(doc_string, indent=INDENT, style='//')
         field_str = f"{type_name} {field_name}[{x}][{y}]"
         self.current_struct.struct_fields_buf.append(
@@ -201,6 +206,8 @@ class AspnYamlToLCM(Backend):
         doc_string: str,
         nullable: bool = False,
     ):
+        if self.current_struct is None:
+            return
         docstr = format_docstring(doc_string, indent=INDENT, style='//')
         field_str = f"{field_type_name} {field_name}"
         self.current_struct.struct_fields_buf.append(
@@ -208,7 +215,8 @@ class AspnYamlToLCM(Backend):
         )
 
     def process_class_docstring(self, doc_string: str, nullable: bool = False):
-        self.current_struct.struct_docstr = doc_string
+        if self.current_struct is not None:
+            self.current_struct.struct_docstr = doc_string
         pass
 
     def process_inheritance_field(
