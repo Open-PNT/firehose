@@ -160,6 +160,7 @@ class AspnYamlToROSTranslations(Backend):
                 """\
                 # Follow Python export conventions:
                 # https://typing.readthedocs.io/en/latest/spec/distributing.html#import-conventions
+                from .aspn_ros_node import AspnRosNode as AspnRosNode
                 from .ros_translations import (
                     AspnMsg, RosMsg, to_ros_map, from_ros_map
                 )
