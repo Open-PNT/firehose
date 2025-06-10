@@ -1,13 +1,17 @@
 # **Firehose - Environment Setup**
-## **Option 1:** VS Code with Dev Containers extension
+
+## **Option 1:** VS Code with Dev Containers extension (main container only)
 
 A container exists in the docker folder to assist with code generation and library building.
 <br>
 If you are using VS Code, install the Microsoft "Dev Containers" extension and it should
 <br>
 prompt you to build and run in the container, which has all dependencies already installed.
-
 <br>
+
+Note that the ROS containers (see below) do not have Dev Containers, so Option 2 is
+<br>
+recommended for these.
 
 ### **SSH keys**
 
@@ -61,6 +65,8 @@ A container rebuild may be needed.
 
 ## **Option 2:** Use Docker manually
 
+### 1. Main Docker container
+
 An alternate way to use Docker is to build your own container manually with the file
 `docker/Dockerfile`.
 
@@ -94,9 +100,58 @@ docker run \
 This will put you in the working directory of the docker image, which is `/firehose`.
 <br>
 
+### 2. ROS Ubuntu Development Docker containers (optional)
+
+#### Explanation
+
+In the main container, the `aspn_ros` subdirectory is created in the output
+directory by `generate.py` (see below). It is populated with auto-generated ROS
+`.msg` files and staged Python ROS packages. To actually use these, however,
+they must be built by `colcon`, ROS's build tool (even though it's mostly
+Python, ROS's messaging system relies requires C extensions). Often, this will
+be done by the user (targeting their specific platform). For example,
+`smartcables` does this in ROS Docker container.
+
+To ease Python development, however, the CI also automatically builds our ROS
+packages for use with Ubuntu 22.04 (ROS Humble) and 24.04 (ROS Jazzy). Due to
+the complexity of the ROS build system, the builds occur in isolated Docker
+containers. These invoke `colcon build` on the stuff in `[output-dir]/aspn-ros`
+and generate installable ROS packages under `[output-dir]/ros_devel/humble` and
+`[output-dir]/ros_devel/jazzy`. To use them (whether inside or outside of a
+Docker container), simply `source firehose-outputs/ros_devel/humble/setup.bash`,
+for example (source whichever one matches your shell; sourcing `setup.sh` from
+`bash` will fail).
+
+#### Building manually
+
+To manually build one of these ROS containers, do
+```bash
+docker build -t firehose-ros:humble --build-arg ROS_DISTRO=humble -f docker/Dockerfile.ros docker
+```
+or
+```bash
+docker build -t firehose-ros:jazzy --build-arg ROS_DISTRO=jazzy -f docker/Dockerfile.ros docker
+```
+
+To run it (which builds the ROS stuff; this can take a few minutes), do
+```bash
+docker run -it -v $(pwd)/build/output:/output firehose-ros:humble
+```
+or
+```bash
+docker run -it -v $(pwd)/build/output:/output firehose-ros:jazzy
+```
+
+Note: before you run a ROS Docker container, make sure you've already run the
+main Docker container, which generated the `[output-dir]/aspn-ros` folder.
+Otherwise, you'll get an error since `aspn-ros` doesn't exist...
+
+Now the `[output-dir]/ros_devel/humble` and `[output-dir]/ros_devel/jazzy`
+directories should exist, and their `setup.*` files can be sourced.
+
 ## **Option 3:** Use bare metal (at your own risk)
 
-Install the packages from `docker/Dockerfile` on your operating system,
+Install the packages from `docker/Dockerfile`/`docker/Dockerfile.ros` on your operating system,
 <br>
 modifying as necessary if you aren't using the Ubuntu LTS version in the `firehose-codegen` image.
 <br>
@@ -105,7 +160,7 @@ This is brittle and **not recommended** as dependencies from elsewhere could cau
 <br>
 
 
-# **Code Generation [`generate.py`]**
+# **Code Generation [`generate.py`] (main Docker container)**
 <br>
 Use the convenience wrapper script `generate.py` in the root directory to easily build, generate, and stage outputs all at once.
 
@@ -175,7 +230,9 @@ python3 generate.py \
         aspn_lcm \
         aspn_py \
         aspn_lcm_translations \
-        aspn_c_marshaling
+        aspn_c_marshaling \
+        aspn_ros \
+        aspn_ros_translations
 ```
 <br>
 
