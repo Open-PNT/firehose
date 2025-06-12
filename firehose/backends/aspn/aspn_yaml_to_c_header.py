@@ -65,14 +65,14 @@ class Struct:
         )
 
         self.free_docstr_no_ptr = dedent(
-            f"""
+            f"""\
             free() all memory held by the given {self.struct_name},
             including the struct itself.
         """
         )
 
         self.free_docstr_w_ptrs = dedent(
-            f"""
+            f"""\
             {self.free_docstr_no_ptr}
             Pointer fields ({{pointer_field_str}}) will be freed using
             free() if they are non-NULL. If any of these have been populated
