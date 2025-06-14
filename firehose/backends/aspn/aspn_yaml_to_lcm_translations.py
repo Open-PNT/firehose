@@ -1,12 +1,13 @@
 from os import makedirs, remove, path
 from os.path import join
+from textwrap import dedent
 from typing import List, Union
 
 from firehose.backends import Backend
 from firehose.backends.aspn.utils import (
     ASPN_PREFIX,
     INDENT,
-    format_and_write_py_file,
+    format_and_write_to_file,
     is_length_field,
     pascal_to_snake,
     snake_to_pascal,
@@ -23,17 +24,21 @@ class Struct:
         self.to_lcm = to_lcm
         self.assignments: list[str] = []
         self.imports_aspn = []
-        self.to_lcm_template = f"""
-def {pascal_to_snake(pascal_struct_name)}_to_lcm(old: {pascal_struct_name}) -> Lcm{pascal_struct_name}:
-{INDENT}msg = Lcm{pascal_struct_name}()
-{{assignments}}
+        self.to_lcm_template = dedent(
+            f"""
+            def {pascal_to_snake(pascal_struct_name)}_to_lcm(old: {pascal_struct_name}) -> Lcm{pascal_struct_name}:
+            {INDENT}msg = Lcm{pascal_struct_name}()
+            {{assigns}}
 
-{INDENT}return msg
-"""
-        self.from_lcm_template = f"""
-def lcm_to_{pascal_to_snake(pascal_struct_name)}(old: Lcm{pascal_struct_name}) -> {pascal_struct_name}:
-{INDENT}return {pascal_struct_name}({{fields}})
-"""
+            {INDENT}return msg
+            """
+        )
+        self.from_lcm_template = dedent(
+            f"""
+            def lcm_to_{pascal_to_snake(pascal_struct_name)}(old: Lcm{pascal_struct_name}) -> {pascal_struct_name}:
+            {INDENT}return {pascal_struct_name}({{fields}})
+            """
+        )
 
 
 PRIMITIVES = ["float", "int", "bool", "str"]
@@ -57,75 +62,132 @@ class AspnYamlToLCMTranslations(Backend):
             self.structs += [self.current_struct]
         self.current_struct = Struct(f"{snake_to_pascal(struct_name)}", to_lcm)
 
-    def _generate_lcm_function(self, struct: Struct):
-        if struct.to_lcm:
-            assignments = [f"{INDENT}msg.{it}" for it in struct.assignments]
-            function = struct.to_lcm_template.format(
-                assignments='\n'.join(assignments)
-            )
-        else:
-            assignments = [
-                f"{INDENT}{INDENT}{it}" for it in struct.assignments
-            ]
-            function = struct.from_lcm_template.format(
-                fields=', '.join(assignments)
-            )
-
-        return function
-
     def generate(self):
         if self.output_folder is None:
             return
         if self.current_struct is not None:
             self.structs += [self.current_struct]
 
-        all_aspn_imports = []
-        for struct in self.structs:
-            all_aspn_imports += struct.imports_aspn
+        imports_aspn = []
+        imports_lcm = []
+        functions = []
+        exports = []
+        alias_aspn = []
+        alias_lcm = []
+        to_lcm_map = []
+        from_lcm_map = []
+        decode_lcm_map = []
+        for s in self.structs:
+            # Function assignments to LCM
+            if s.to_lcm:
+                assignments = [f"{INDENT}msg.{a}" for a in s.assignments]
+                functions.append(
+                    s.to_lcm_template.format(assigns="\n".join(assignments))
+                )
+                continue
 
-        all_aspn_imports += [
-            f"from aspn23.{pascal_to_snake(it.struct_name)} import {it.struct_name}"
-            for it in self.structs
-        ]
+            # Function assignments from LCM
+            assignments = [f"{INDENT}{INDENT}{a}" for a in s.assignments]
+            functions.append(
+                s.from_lcm_template.format(fields=", ".join(assignments))
+            )
 
-        imports_lcm = [
-            f"from .{pascal_to_snake(it.struct_name)} import {pascal_to_snake(it.struct_name)} as Lcm{it.struct_name}"
-            for it in self.structs
-        ]
-        imports = all_aspn_imports + imports_lcm
-        imports = "\n".join(imports)
+            # Imports/exports/etc. only need to happen once, so skip them for
+            # the "to LCM" structs (see above)
+            snake_name = pascal_to_snake(s.struct_name)
+            imports_aspn.append(
+                f"from aspn23.{snake_name} import {s.struct_name}"
+            )
+            imports_aspn.extend(s.imports_aspn)
+            imports_lcm.append(
+                f"from .{snake_name} import {snake_name} as Lcm{s.struct_name}"
+            )
+            exports.append(f"lcm_to_{snake_name} as lcm_to_{snake_name}")
+            exports.append(f"{snake_name}_to_lcm as {snake_name}_to_lcm")
 
-        functions = "\n".join(
-            [self._generate_lcm_function(it) for it in self.structs]
+            # For Measurement/Metadata objects, we also want to generate some
+            # utility definitions
+            if s.struct_name.startswith("Type"):
+                continue
+            alias_aspn.append(f"{INDENT}{s.struct_name},")
+            alias_lcm.append(f"{INDENT}Lcm{s.struct_name},")
+            to_lcm_map.append(f"{INDENT}{s.struct_name}: {snake_name}_to_lcm,")
+            from_lcm_map.append(
+                f"{INDENT}Lcm{s.struct_name}: lcm_to_{snake_name},"
+            )
+            decode_lcm_map.append(
+                f"{INDENT}Lcm{s.struct_name}._get_packed_fingerprint(): "
+                f"Lcm{s.struct_name}.decode,"
+            )
+
+        imports = "\n".join(imports_aspn + imports_lcm)
+        functions = "\n".join(functions)
+        exports = "\n".join(exports)
+        alias_aspn = "\n".join(alias_aspn)
+        alias_lcm = "\n".join(alias_lcm)
+        to_lcm_map = "\n".join(to_lcm_map)
+        from_lcm_map = "\n".join(from_lcm_map)
+        decode_lcm_map = "\n".join(decode_lcm_map)
+
+        format_and_write_to_file(
+            dedent(
+                """\
+                from typing import TypeAlias, Union, Callable
+                import numpy as np
+
+                {imports}
+
+                {functions}
+
+                AspnMsg: TypeAlias = Union[
+                {alias_aspn}
+                ]
+
+                LcmMsg: TypeAlias = Union[
+                {alias_lcm}
+                ]
+
+                to_lcm_map: dict[type[AspnMsg], Callable] = {{
+                {to_lcm_map}
+                }}
+
+                from_lcm_map: dict[type[LcmMsg], Callable] = {{
+                {from_lcm_map}
+                }}
+
+                decode_lcm_map: dict[bytes, Callable] = {{
+                {decode_lcm_map}
+                }}\
+                """
+            ).format(
+                imports=imports,
+                alias_aspn=alias_aspn,
+                alias_lcm=alias_lcm,
+                functions=functions,
+                to_lcm_map=to_lcm_map,
+                from_lcm_map=from_lcm_map,
+                decode_lcm_map=decode_lcm_map,
+            ),
+            join(self.output_folder, "lcm_translations.py"),
         )
 
-        template = """
-import numpy as np
-{imports}
-
-{functions}
-        """
-
-        output_file_content = template.format(
-            imports=imports, functions=functions
+        format_and_write_to_file(
+            dedent(
+                """\
+                # Follow Python export conventions:
+                # https://typing.readthedocs.io/en/latest/spec/distributing.html#import-conventions
+                from .lcm_translations import (
+                    AspnMsg as AspnMsg,
+                    LcmMsg as LcmMsg,
+                    to_lcm_map as to_lcm_map,
+                    from_lcm_map as from_lcm_map,
+                    decode_lcm_map as decode_lcm_map,
+                    {exports}
+                )\
+                """
+            ).format(exports=exports),
+            join(self.output_folder, "__init__.py"),
         )
-
-        output_translations = join(self.output_folder, "lcm_translations.py")
-        format_and_write_py_file(output_file_content, output_translations)
-
-        exports = '''\
-# Follow Python export conventions:
-# https://typing.readthedocs.io/en/latest/spec/distributing.html#import-conventions
-from .lcm_translations import (
-        '''
-        function_base_names = [
-            pascal_to_snake(struct.struct_name) for struct in self.structs
-        ]
-        for name in function_base_names:
-            exports += f'\nlcm_to_{name} as lcm_to_{name}\n{name}_to_lcm as {name}_to_lcm'
-        exports += '\n)'
-        output_init = join(self.output_folder, '__init__.py')
-        format_and_write_py_file(exports, output_init)
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     # # # # # # # # # # # # # # # Backend Methods # # # # # # # # # # # # # # #
