@@ -107,5 +107,9 @@ WORKDIR /firehose
 # Necessary to encode certain characters when compiling the Java code.
 ENV LANG=C.UTF-8
 
+# Pass CI TOKEN_URL for user_bootstrap.sh
+ARG token_url
+ENV TOKEN_URL=$token_url
+
 COPY user_bootstrap.sh /
 ENTRYPOINT ["/user_bootstrap.sh"]
