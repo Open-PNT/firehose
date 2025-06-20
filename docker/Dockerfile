@@ -108,8 +108,8 @@ WORKDIR /firehose
 ENV LANG=C.UTF-8
 
 # Pass CI TOKEN_URL for user_bootstrap.sh
-ARG token_url
-ENV TOKEN_URL=$token_url
+ARG TOKEN_URL
+ENV ENV_TOKEN_URL=$TOKEN_URL
 
 COPY user_bootstrap.sh /
 ENTRYPOINT ["/user_bootstrap.sh"]
