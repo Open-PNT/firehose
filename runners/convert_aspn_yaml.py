@@ -12,6 +12,7 @@ from firehose.backends import (
     AspnYamlToDDS,
     AspnYamlToLCM,
     AspnYamlToROS,
+    AspnYamlToROSTranslations,
     AspnYamlToXMI,
     AspnYamlToLCMTranslations,
     Backend,
@@ -188,6 +189,7 @@ def main():
         'lcm': AspnYamlToLCM,
         'lcmtranslations': AspnYamlToLCMTranslations,
         'ros': AspnYamlToROS,
+        'ros_translations': AspnYamlToROSTranslations,
         'py': AspnPyBackend,
         'xmi': AspnYamlToXMI,
         'marshal_lcm_c': AspnCMarshalingBackend,
@@ -260,7 +262,9 @@ def main():
                 }
                 if yaml_data['fields'][0] != type_field:
                     yaml_data['fields'] = [type_field] + yaml_data['fields']
-            if isinstance(backend, AspnYamlToLCMTranslations):
+            if isinstance(
+                backend, (AspnYamlToLCMTranslations, AspnYamlToROSTranslations)
+            ):
                 backend.begin_struct(yaml_data['name'], True)
                 gen_struct(backend, yaml_data)
                 backend.begin_struct(yaml_data['name'], False)

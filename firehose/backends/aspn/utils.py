@@ -123,6 +123,10 @@ CODEGEN_MAPPINGS = {
         lambda x: snake_to_pascal(x),
     ),
     'AspnYamlToROS': (ASPN_TO_ROS_MAPPINGS, lambda x: snake_to_pascal(x)),
+    'AspnYamlToROSTranslations': (
+        ASPN_TO_PYTHON_MAPPINGS,
+        lambda x: snake_to_pascal(x),
+    ),
     'AspnYamlToDDS': (ASPN_TO_DDS_MAPPINGS, lambda x: snake_to_pascal(x)),
     'AspnPyBackend': (ASPN_TO_PYTHON_MAPPINGS, lambda x: snake_to_pascal(x)),
 }
@@ -219,6 +223,7 @@ def name_to_enum_value(codegen_instance, enum_name: str) -> str:
         'AspnYamlToLCM',
         'AspnYamlToLCMTranslations',
         'AspnYamlToROS',
+        'AspnYamlToROSTranslations',
     ]:
         return enum_name
     elif codegen_instance.__class__.__name__ in ['AspnYamlToDDS']:
