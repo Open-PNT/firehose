@@ -8,6 +8,7 @@ ENV DEBIAN_FRONTEND noninteractive
 # bash-completion: For tab completion while using git, etc.
 # build-essential: For compiling ASPN-C, etc.
 # ca-certificates: To allow HTTPS connections
+# ccache: To decrease compile times when building C/C++ code.
 # clang-format: For formatting source code
 # cmake: For building the LCM subproject
 # default-jdk: For Java development
@@ -35,6 +36,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   bash-completion \
   build-essential \
   ca-certificates \
+  ccache \
   clang-format \
   cmake \
   default-jdk \
