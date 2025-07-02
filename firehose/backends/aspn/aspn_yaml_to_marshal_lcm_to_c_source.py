@@ -295,9 +295,9 @@ class AspnYamlToMarshalLCMToCSource(Backend):
                 self.current_struct.function_args.append("&header")
             case "Aspn23TypeTimestamp":
                 self.current_struct.function_prep_buf.append(
-                    "AspnTypeTimestamp time = {lcm_msg->time_of_validity.elapsed_nsec};"
+                    f"AspnTypeTimestamp {field_name} = {{lcm_msg->{field_name}.elapsed_nsec}};"
                 )
-                self.current_struct.function_args.append("&time")
+                self.current_struct.function_args.append(f"&{field_name}")
             case "Aspn23TypeMetadataheader":
                 self.current_struct.function_prep_buf.append(
                     f"AspnTypeMetadataheader* {field_name} = marshal_aspn23_lcm_type_metadataheader(lcm_msg->{field_name}, {self.current_struct.struct_enum});"
