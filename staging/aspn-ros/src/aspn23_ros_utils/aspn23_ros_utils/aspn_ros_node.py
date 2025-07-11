@@ -14,8 +14,9 @@ import aspn23_ros_interfaces.msg as ros_msg
 
 
 class AspnRosNode(Node):
-    def __init__(self, node_name: str):
+    def __init__(self, node_name: str, queue_size: int = 100):
         super().__init__(node_name)
+        self.queue_size = queue_size
         self.pubs: dict[str, Publisher] = {}
 
     def subscribe_aspn(
@@ -51,13 +52,17 @@ class AspnRosNode(Node):
                     f"unless message type is specified."
                 )
         self.get_logger().info(f"Subscribing to '{topic}'.")
-        return self.create_subscription(msg_type, topic, ros_cb, 10)
+        return self.create_subscription(
+            msg_type, topic, ros_cb, self.queue_size
+        )
 
     def publish_aspn(self, aspn_msg: AspnMsg, topic: str) -> None:
         self.publish_ros(to_ros_map[type(aspn_msg)](aspn_msg), topic)
 
     def publish_ros(self, ros_msg: RosMsg, topic: str) -> None:
         if topic not in self.pubs:
-            self.pubs[topic] = self.create_publisher(type(ros_msg), topic, 10)
+            self.pubs[topic] = self.create_publisher(
+                type(ros_msg), topic, self.queue_size
+            )
         self.pubs[topic].publish(ros_msg)
         self.get_logger().info(f"Published on '{topic}'.")
