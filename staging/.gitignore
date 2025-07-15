@@ -3,3 +3,5 @@ subprojects/xtensor/
 subprojects/xtl/
 subprojects/xtensor-python/
 subprojects/pybind11-*/
+
+**/__pycache__
