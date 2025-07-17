@@ -20,7 +20,7 @@ export HOME="/home/$user"
 if [[ -n $ENV_TOKEN_URL ]]; then
   echo -e \
   "[url \"$ENV_TOKEN_URL\"]\n\tinsteadOf = git@git.aspn.us:\n\tinsteadOf = ssh://git@git.aspn.us/" \
-  > ~/.gitconfig
+  > /etc/gitconfig
 fi
 
 # Run as account created above
