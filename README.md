@@ -223,29 +223,41 @@ proper aspn-icd branch with your custom messages on it. Then wait for the CI
 to build the subsequent `firehose-outputs` branch and point the
 `firehose-outputs.wrap` `revision` to that new commit in the project.
 
-# Generate ROS Ubuntu Development Packages via Docker
+# Building ASPN-ROS
 
 ## Explanation
 
 In the main container, the `aspn_ros` subdirectory is created in the output
-directory by `generate.py` (see below). It is populated with auto-generated ROS
-`.msg` files and staged Python ROS packages. To actually use these, however,
-they must be built by `colcon`, ROS's build tool (even though it's mostly
-Python, ROS's messaging system relies requires C extensions). Often, this will
+directory by `generate.py` (see below). It is populated with auto-generated
+ROS `.msg` files and staged Python ROS packages. To actually use these,
+however, they must be built by `colcon`, ROS's build tool (even though it's
+mostly Python, ROS's messaging system requires C extensions). Often, this will
 be done by the user (targeting their specific platform). For example,
-`smartcables` does this in ROS Docker container.
+`smartcables` does this in a ROS Docker container.
+
+## Using CI's ASPN-ROS Ubuntu x86 development packages (easiest)
 
 To ease Python development, however, the CI also automatically builds our ROS
-packages for use with Ubuntu 22.04 (ROS Humble) and 24.04 (ROS Jazzy). Due to
-the complexity of the ROS build system, the builds occur in isolated Docker
-containers. These invoke `colcon build` on the stuff in `[output-dir]/aspn-ros`
-and generate installable ROS packages under `[output-dir]/ros_devel/humble` and
-`[output-dir]/ros_devel/jazzy`. To use them (whether inside or outside of a
-Docker container), simply `source firehose-outputs/ros_devel/humble/setup.bash`,
-for example (source whichever one matches your shell; sourcing `setup.sh` from
-`bash` will fail).
+packages for use with Ubuntu 22.04 (ROS Humble) and 24.04 (ROS Jazzy) on x86
+machines. Due to the complexity of the ROS build system, the builds occur in
+isolated Docker containers. These invoke `colcon build` on the stuff in
+`[output-dir]/aspn-ros` and generate installable ROS packages under
+`[output-dir]/ros_devel/humble` and `[output-dir]/ros_devel/jazzy`. To use
+them (whether inside or outside of a Docker container), simply `source
+firehose-outputs/ros_devel/humble/setup.bash`, for example (source whichever
+one matches your shell; sourcing `setup.sh` from `bash` will fail).
 
-## Building manually
+## Building with Docker
+
+If you want ASPN-ROS and aren't using Ubuntu on x86, you'll need to build it
+yourself. You can use the same Docker container that the CI uses.
+
+> [!WARNING]
+> Before you run a ROS Docker container, make sure you've already run the main
+> Docker container (see above), which generated the `[output-dir]/aspn-ros`
+> folder. In particular, you'll need to have built targets `aspn_ros` and
+> `aspn_ros_translations` (i.e. `python3 generate.py --targets aspn_ros
+> aspn_ros_translations` or `python3 generate.py -a`).
 
 To manually build one of these ROS containers, do
 ```bash
@@ -256,7 +268,7 @@ or
 docker build -t firehose-ros:jazzy --build-arg ROS_DISTRO=jazzy -f docker/Dockerfile.ros docker
 ```
 
-To run it (which builds the ROS stuff; this can take a few minutes), do
+To run it (which builds the ROS stuff; this can take several minutes), do
 ```bash
 docker run -it -v $(pwd)/build/output:/output firehose-ros:humble
 ```
@@ -265,10 +277,39 @@ or
 docker run -it -v $(pwd)/build/output:/output firehose-ros:jazzy
 ```
 
-> [!NOTE]
-> Before you run a ROS Docker container, make sure you've already run the main
-> Docker container (see above), which generated the `[output-dir]/aspn-ros`
-> folder. Otherwise, you'll get an error since `aspn-ros` doesn't exist...
+Now the `[output-dir]/ros_devel/humble` or `[output-dir]/ros_devel/jazzy`
+directory should exist, and its `setup.*` files can be sourced. If you're
+trying to *use* ASPN-ROS within a Docker container with ROS (on a non-Ubuntu
+system, for example), the directory can be copied into the container before
+sourcing.
 
-Now the `[output-dir]/ros_devel/humble` and `[output-dir]/ros_devel/jazzy`
-directories should exist, and their `setup.*` files can be sourced.
+## Building manually without Docker
+
+> [!WARNING]
+> To run `colcon build`, you must either not use a virtual environment, or
+> create it with `--system-site-packages` (e.g., `uv venv
+> --system-site-packages` or `python3 -m venv .venv --system-site-packages`.
+> Otherwise, ROS won't be able to find its Python dependencies installed to the
+> system, and you'll get an error.
+
+If you have ROS (including `colcon`) installed locally (see [Humble
+Installation Guide](https://docs.ros.org/en/humble/Installation.html) or
+[Jazzy Installation Guide](https://docs.ros.org/en/jazzy/Installation.html)),
+you can build ASPN-ROS directly. First, make sure the ROS environment is
+sourced:
+
+```bash
+source /opt/ros/[humble/jazzy]/setup.[sh/bash/zsh]
+```
+
+Now, either run the main container (see above) or clone `firehose-outputs`.
+Then:
+
+```bash
+cd [output-dir]/aspn-ros
+colcon build
+```
+
+This will create an `install/` directory in the current directory with setup
+files. To activate the ASPN-ROS environment, `source
+install/setup.[sh/bash/zsh]`.
