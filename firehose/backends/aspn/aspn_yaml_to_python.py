@@ -4,6 +4,8 @@ from os.path import join
 from typing import List, Union
 import re
 
+import numpy as np
+
 from firehose.backends import Backend
 from firehose.backends.aspn.utils import (
     ASPN_PREFIX,
@@ -44,16 +46,8 @@ from enum import Enum
 from dataclasses import dataclass
 from typing import List
 from typing import Optional
+from numpy.typing import NDArray
 import numpy as np
-
-# Backwards compatibility for typing numpy arrays
-NumpyArray = np.ndarray # represents a 1 dimensional numpy array
-NumpyMatrix = np.ndarray # represents a 2 dimensional numpy array
-try:
-    from numpy.typing import NDArray
-    NumpyArray = NumpyMatrix = NDArray
-except ImportError:
-    pass
 
 {{aspn_imports}}
 
@@ -207,11 +201,8 @@ class AspnBase(Protocol):
             return
 
         typehint = f"List[{type_name}]"
-        if isinstance(data_len, int):
-            typehint = f"NumpyArray[{type_name}]"
-        elif type_name in ["float", "int"]:
-            typehint = f"NumpyArray[{type_name}]"
-
+        if isinstance(data_len, int) or type_name in ["float", "int"]:
+            typehint = f"NDArray[np.{np.dtype(type_name).type.__name__}]"
         if nullable:
             typehint = f"Optional[{typehint}]"
         field_str = f"{field_name}: {typehint}"
@@ -236,7 +227,7 @@ class AspnBase(Protocol):
         doc_string: str,
         nullable=None,
     ):
-        typehint = f"NumpyMatrix[{type_name}]"
+        typehint = f"NDArray[np.{np.dtype(type_name).type.__name__}]"
         if nullable:
             typehint = f"Optional[{typehint}]"
         field_str = f"{field_name}: {typehint}"
