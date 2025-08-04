@@ -13,3 +13,8 @@ requires-python = ">= 3.8"
 where=["src"]
 include=["aspn23*"]
 namespaces=false
+
+[project.optional-dependencies]
+dev = [
+    "mypy>=1.9.0",
+]
