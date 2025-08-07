@@ -242,7 +242,6 @@ if not get_option('aspn-cpp-xtensor-py').disabled()
     aspn_xtensor_py_static_lib = static_library('aspn_xtensor_py',
         sources: [aspn_xtensor_py_sources, 'src/aspn23/xtensor_py/xtensor_bindings.cpp'],
         include_directories: aspn_xtensor_py_include,
-        cpp_args: ['-DPYBIND11_USE_SMART_HOLDER_AS_DEFAULT'],
         override_options: ['b_coverage=false', 'b_sanitize=none'],
         dependencies: [aspn_xtensor_py_deps, aspn_c_no_asan_dep])
 
@@ -258,7 +257,6 @@ if not get_option('aspn-cpp-xtensor-py').disabled()
         sources: ['src/aspn23/xtensor_py/xtensor_bindings_module.cpp'],
         include_directories: aspn_xtensor_py_include,
         dependencies: aspn_xtensor_py_deps,
-        cpp_args: ['-DPYBIND11_USE_SMART_HOLDER_AS_DEFAULT'],
         override_options: ['b_coverage=false', 'b_sanitize=none'],
         link_whole: aspn_xtensor_py_static_lib,
         install: true)
@@ -571,7 +569,7 @@ endif
 
     def begin_struct(self, struct_name: str):
         self.binding_template = '''
-        py::class_<{class_name}{inheritance}, PYBIND11_SH_DEF({class_name})>(m, "{class_name}")
+        py::class_<{class_name}{inheritance}, py::smart_holder>(m, "{class_name}")
         .def(py::init<PARAMS({types})>())
         {getters_setters}{extra_bindings};
         '''
