@@ -2,12 +2,11 @@
 directory = xtensor
 
 url = https://github.com/xtensor-stack/xtensor.git
-# v0.21.5
-revision = 1651d60d09fdf50e4509a1c8af6f0a2fded0c6d4
+# v0.27.1
+revision = f115228a7fc277b9be1bef34572831f8fd53ac73
 depth = 1
 
 patch_directory = xtensor
 
 [provide]
 dependency_names = xtensor
-

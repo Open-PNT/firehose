@@ -788,8 +788,8 @@ class AspnYamlToXtensorHeader(AspnYamlToCppHeader):
         super().__init__()
 
     def matrix_includes(self) -> str:
-        return '''#include <xtensor/xarray.hpp>
-                  #include <xtensor/xadapt.hpp>'''
+        return '''#include <xtensor/containers/xarray.hpp>
+                  #include <xtensor/containers/xadapt.hpp>'''
 
     def vector(self, type: str) -> str:
         return f'xt::xarray<{type}>'
@@ -806,7 +806,7 @@ class AspnYamlToXtensorPyHeader(AspnYamlToCppHeader):
 
     def matrix_includes(self) -> str:
         return '''#include <xtensor-python/pyarray.hpp>
-                  #include <xtensor/xadapt.hpp>'''
+                  #include <xtensor/containers/xadapt.hpp>'''
 
     def vector(self, type: str) -> str:
         return f'xt::pyarray<{type}>'
