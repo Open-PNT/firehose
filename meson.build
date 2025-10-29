@@ -1,7 +1,7 @@
 project('firehose', 'cpp',
     version : '0.0.1',
     license : 'Apache 2.0',
-    default_options : ['cpp_std=c++14']
+    default_options : ['cpp_std=c++20']
 )
 
 firehose_root = meson.project_source_root()
