@@ -7,6 +7,6 @@ name="aspn23_lcm"
 version="0.1.0"
 description="The LCM Python representation of ASPN-23"
 dependencies=[
-    "lcm"
+    "lcm>=1.5.1,<2"
 ]
 requires-python = ">= 3.5"
