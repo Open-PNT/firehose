@@ -1,4 +1,4 @@
-project('firehose-output',
+project('firehose-outputs',
     ['c', 'cpp'],
     version : '23',
     default_options: ['cpp_std=c++20', 'c_std=c99', 'warning_level=3'])
