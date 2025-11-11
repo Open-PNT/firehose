@@ -307,6 +307,7 @@ endif
     def _generate_bindings(self):
         bindings_template = """
         #include <pybind11/eval.h>
+        #include <pybind11/native_enum.h>
         #include <pybind11/operators.h>
         #include <pybind11/pybind11.h> // Pybind11 import to define Python bindings
         #include <pybind11/stl.h>
@@ -343,7 +344,7 @@ endif
         """
 
         types_enum = f'''
-        py::enum_<{ASPN_PREFIX}MessageType>(m, "AspnMessageType")
+        py::native_enum<{ASPN_PREFIX}MessageType>(m, "AspnMessageType", "enum.Enum")
         .value("ASPN_UNDEFINED", AspnMessageType::ASPN_UNDEFINED)
         '''
         for type in self.all_types + [
@@ -351,7 +352,7 @@ endif
             'ASPN_EXTENDED_END',
         ]:
             types_enum += f'.value("{type}", {ASPN_PREFIX}MessageType::{type})'
-        types_enum += ';'
+        types_enum += '.finalize();'
         self.bindings += [types_enum]
 
         if self.getters_setters != '':
@@ -881,16 +882,14 @@ endif
             unversioned_type_name = field_type_name.replace(
                 ASPN_PREFIX, 'Aspn'
             )
-            enum = (
-                f'py::enum_<{field_type_name}>(m, "{unversioned_type_name}")'
-            )
+            enum = f'py::native_enum<{field_type_name}>(m, "{unversioned_type_name}", "enum.Enum")'
             for enum_value in enum_values:
                 enum_value = enum_value.split('=')[0]
                 enum_value = enum_value.replace(ASPN_PREFIX.upper(), 'ASPN')
                 enum += (
                     f'.value("{enum_value}", {field_type_name}::{enum_value})'
                 )
-            enum += ';'
+            enum += '.finalize();'
             self.bindings += [enum]
 
     def generate(self):
