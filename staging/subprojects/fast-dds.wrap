@@ -1,0 +1,7 @@
+[wrap-git]
+directory = fast-dds
+
+url = https://github.com/eProsima/Fast-DDS.git
+revision = aa7f2bf7bed5e24878ed4d87c66422b909784243
+clone-recursive = true
+depth = 1

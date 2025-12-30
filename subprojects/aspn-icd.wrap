@@ -1,0 +1,9 @@
+[wrap-git]
+directory = aspn-icd-release-2023
+
+url = git@git.aspn.us:aspn/aspn-icd.git
+revision = release/2023.1
+depth = 1
+
+patch_directory=aspn-icd
+

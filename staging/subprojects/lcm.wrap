@@ -1,0 +1,7 @@
+[wrap-git]
+directory = lcm
+
+url = https://github.com/lcm-proj/lcm.git
+# master branch - committed 4 April 2024
+revision = 3240f67d3019bc95035f3859e2ba702a8e347295
+depth = 1

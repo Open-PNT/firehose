@@ -1,0 +1,10 @@
+# Python formatter
+black
+# C++ Formatter
+clang-format
+# For sorting and removing unused imports in ASPN-Python
+isort
+# Build system for executing generation targets and bringing in subprojects
+meson
+# YAML parser
+pyyaml

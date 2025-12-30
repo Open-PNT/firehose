@@ -1,0 +1,34 @@
+# The following options each have three possible values:
+# - 'enabled' activates the subdirectory. If there are any dependencies preventing build targets in
+#   the corresponding subdirectory from being built then a hard error will be thrown.
+# - 'auto' activates the subdirectory, but if there are any dependencies preventing build targets in
+#   the corresponding subdirectory from being built then a warning will be printed and those targets
+#   will be disabled.
+# - 'disabled' excludes the subdirectory entirely.
+option('aspn-c', type : 'feature', value: 'auto', yield : true)
+
+# The following options are a subset of the aspn-c option. If that subdirectory is disabled then
+# all of these options will be ignored.
+
+# When set to false, the main ASPN-C shared and static libraries are not built. Also, the headers
+# and pkgconfig file are not installed.
+option('aspn-c-main-library', type: 'boolean', value: 'true', yield: true)
+
+option('aspn-cpp', type : 'feature', value: 'auto', yield : true)
+
+# The following options are a subset of the aspn-cpp option. If that subdirectory is disabled then
+# all of these options will be ignored.
+option('aspn-cpp-eigen', type : 'feature', value: 'auto', yield : true)
+option('aspn-cpp-stl', type : 'feature', value: 'auto', yield : true)
+option('aspn-cpp-xtensor', type : 'feature', value: 'auto', yield : true)
+option('aspn-cpp-xtensor-py', type : 'feature', value: 'auto', yield : true)
+
+# FastDDS is a dependency of the following options. If FastDDS is disabled then all of these options
+# will be ignored.
+option('dds-generated', type : 'feature', value: 'auto', yield : true)
+
+option('lcm-generated', type : 'feature', value: 'auto', yield : true)
+# The following options are a subset of the lcm-generated option. If that subdirectory is disabled
+# then all these options will be ignored.
+option('lcm-generated-c', type : 'feature', value: 'auto', yield : true)
+option('lcm-generated-cpp', type : 'feature', value: 'auto', yield : true)

@@ -1,0 +1,19 @@
+[build-system]
+requires = ['meson-python', 'numpy']
+build-backend = 'mesonpy'
+
+[tool.meson-python.args]
+setup = ['-Daspn-cpp-eigen=disabled',
+         '-Daspn-cpp-stl=disabled',
+         '-Daspn-cpp-xtensor=disabled',
+         '-Daspn-cpp-xtensor-py=enabled',
+         '-Ddds-generated=disabled',
+         '-Dlcm-generated=disabled',
+         '-Daspn-c-main-library=false']
+install = ['--tags=runtime,python-runtime']
+
+[project]
+dependencies = ['numpy']
+name = 'aspn23_xtensor'
+version = '0.dev2'
+description = 'ASPN-C++ (xtensor) Python Bindings'

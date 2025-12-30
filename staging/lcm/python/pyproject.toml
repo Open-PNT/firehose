@@ -1,0 +1,12 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name="aspn23_lcm"
+description="The LCM Python representation of ASPN-23"
+dependencies=[
+    "lcm"
+]
+dynamic=["version"]
+requires-python = ">= 3.5"

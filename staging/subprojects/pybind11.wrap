@@ -1,0 +1,11 @@
+[wrap-git]
+directory = pybind11-6b8264fb249a4617450a0b598ac5c3b3ac555e07
+
+url = https://github.com/pybind/pybind11.git
+revision = 6b8264fb249a4617450a0b598ac5c3b3ac555e07
+depth = 1
+
+patch_directory = pybind11-smart-holder
+
+[provide]
+dependency_names = pybind11
