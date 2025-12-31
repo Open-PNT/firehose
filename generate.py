@@ -76,7 +76,6 @@ FIREMAN = r"""
 FIREHOSE_ROOT = os.path.abspath(os.path.dirname(__file__))
 DEFAULT_BUILD_DIR = join(FIREHOSE_ROOT, "build")
 DEFAULT_SUBPROJECTS_DIR = join(FIREHOSE_ROOT, "subprojects")
-DEFAULT_ASPN_ICD_DIR = join(DEFAULT_SUBPROJECTS_DIR, "aspn-icd-release-2023")
 DEFAULT_STAGING_INPUT_DIR = join(FIREHOSE_ROOT, "staging")
 DEFAULT_OUTPUT_DIR = join(FIREHOSE_ROOT, "build", "output")
 
@@ -256,14 +255,6 @@ def configure_build_directory(
         "type_": "types",
     }
 
-    # Repair ICD subproject if necessary as it's mission critical here
-    if (
-        aspn_icd_dir == DEFAULT_ASPN_ICD_DIR
-        or not os.path.exists(aspn_icd_dir)
-        or not os.listdir(aspn_icd_dir)
-    ):
-        subprocess.check_call(["meson", "subprojects", "update", "--reset"])
-
     # Create the temporary directory structure
     if extra_icd_files_dir is not None:
         if extra_icd_files_dir:
@@ -400,7 +391,6 @@ def run_lcm_gen(build_dir: str, output_dir: str) -> None:
     Runs the LCM code generation commands.
     This must only be run AFTER the LCM ICD files have been generated.
     """
-    lcm_gen_path = join(build_dir, "subprojects", "lcm", "lcm_gen")
     output_paths: Dict[str, str] = {
         "python": join(output_dir, "lcm", "python"),
         "java": join(output_dir, "lcm", "java"),
@@ -411,16 +401,16 @@ def run_lcm_gen(build_dir: str, output_dir: str) -> None:
 
     # Run the subprocess with the expanded list of files
     subprocess.run(
-        [lcm_gen_path, "-p", *lcm_files, "--ppath", output_paths["python"]],
+        ['lcm-gen', "-p", *lcm_files, "--ppath", output_paths["python"]],
         check=True,
     )
 
     subprocess.run(
-        [lcm_gen_path, "-j", *lcm_files, "--jpath", output_paths["java"]],
+        ['lcm-gen', "-j", *lcm_files, "--jpath", output_paths["java"]],
         check=True,
     )
     subprocess.run(
-        [lcm_gen_path, "-x", *lcm_files, "--cpp-hpath", output_paths["cpp"]],
+        ['lcm-gen', "-x", *lcm_files, "--cpp-hpath", output_paths["cpp"]],
         check=True,
     )
 
@@ -428,7 +418,7 @@ def run_lcm_gen(build_dir: str, output_dir: str) -> None:
     os.makedirs(join(output_paths["c"], "include"), exist_ok=True)
     subprocess.run(
         [
-            lcm_gen_path,
+            'lcm-gen',
             "-c",
             *lcm_files,
             "--c-cpath",
@@ -440,6 +430,20 @@ def run_lcm_gen(build_dir: str, output_dir: str) -> None:
     )
 
 
+from site import getsitepackages
+from pathlib import Path
+
+
+def _get_path_to_lcm_jar() -> str:
+    for directory in getsitepackages():
+        candidate = Path(directory) / 'share' / 'java' / 'lcm.jar'
+        if (candidate).exists():
+            return candidate.as_posix()
+    raise Exception(
+        f'Could not find lcm.jar root directory in any of the following directories {getsitepackages()}'
+    )
+
+
 def _build_lcm_jar(lcm_staging_dir: str) -> None:
     """
     Builds the LCM JAR file using Gradle.
@@ -447,9 +451,11 @@ def _build_lcm_jar(lcm_staging_dir: str) -> None:
     cwd = os.getcwd()
     try:
         os.chdir(lcm_staging_dir)
-        subprocess.run(["gradle"], check=True)
-        subprocess.run(["gradle", "compileJava"], check=True)
-        subprocess.run(["gradle", "jar"], check=True)
+        env = os.environ.copy()
+        env['LCM_JAR_PATH'] = _get_path_to_lcm_jar()
+        subprocess.run(["gradle"], check=True, env=env)
+        subprocess.run(["gradle", "compileJava"], check=True, env=env)
+        subprocess.run(["gradle", "jar"], check=True, env=env)
     except subprocess.CalledProcessError as e:
         print(f"Error building LCM JAR: {e}")
         raise e
@@ -562,12 +568,8 @@ def get_args() -> argparse.Namespace:
 
     parser.add_argument(
         "--aspn-icd-dir",
-        default=DEFAULT_ASPN_ICD_DIR,
         metavar="",
-        help=(
-            "Directory containing input Aspn YAML files for generation. "
-            f"Defaults to {DEFAULT_ASPN_ICD_DIR}"
-        ),
+        help=("Directory containing input Aspn YAML files for generation."),
         type=normalized_path,
     )
     parser.add_argument(
@@ -649,35 +651,17 @@ def create_targets(args: argparse.Namespace) -> None:
         FirehoseTarget(
             name="aspn_c",
             runner=ASPN_CODEGEN_RUNNER,
-            cmd_args=[
-                args.aspn_icd_dir,
-                "-d",
-                join(args.output_dir, "aspn-c"),
-                "-o",
-                "c",
-            ],
+            cmd_args=["-d", join(args.output_dir, "aspn-c"), "-o", "c"],
         ),
         FirehoseTarget(
             name="aspn_cpp",
             runner=ASPN_CODEGEN_RUNNER,
-            cmd_args=[
-                args.aspn_icd_dir,
-                "-d",
-                join(args.output_dir, "aspn-cpp"),
-                "-o",
-                "cpp",
-            ],
+            cmd_args=["-d", join(args.output_dir, "aspn-cpp"), "-o", "cpp"],
         ),
         FirehoseTarget(
             name="aspn_lcm",
             runner=ASPN_CODEGEN_RUNNER,
-            cmd_args=[
-                args.aspn_icd_dir,
-                "-d",
-                join(args.output_dir, "aspn-lcm"),
-                "-o",
-                "lcm",
-            ],
+            cmd_args=["-d", join(args.output_dir, "aspn-lcm"), "-o", "lcm"],
             post_run=post_aspn_lcm,
             post_run_args=[
                 args.build_dir,
@@ -689,7 +673,6 @@ def create_targets(args: argparse.Namespace) -> None:
             name="aspn_dds_idl",
             runner=ASPN_CODEGEN_RUNNER,
             cmd_args=[
-                args.aspn_icd_dir,
                 "-d",
                 join(args.output_dir, "dds", "idl", "aspn23_dds"),
                 "-o",
@@ -700,7 +683,6 @@ def create_targets(args: argparse.Namespace) -> None:
             name="aspn_lcm_translations",
             runner=ASPN_CODEGEN_RUNNER,
             cmd_args=[
-                args.aspn_icd_dir,
                 "-d",
                 join(args.output_dir, "lcm", "python", "aspn23_lcm"),
                 "-o",
@@ -711,13 +693,7 @@ def create_targets(args: argparse.Namespace) -> None:
         FirehoseTarget(
             name="aspn_py",
             runner=ASPN_CODEGEN_RUNNER,
-            cmd_args=[
-                args.aspn_icd_dir,
-                "-d",
-                join(args.output_dir, "aspn-py"),
-                "-o",
-                "py",
-            ],
+            cmd_args=["-d", join(args.output_dir, "aspn-py"), "-o", "py"],
         ),
         FirehoseTarget(
             name="aspn_dds_cpp",
@@ -734,7 +710,6 @@ def create_targets(args: argparse.Namespace) -> None:
             name="aspn_ros",
             runner=ASPN_CODEGEN_RUNNER,
             cmd_args=[
-                args.aspn_icd_dir,
                 "-d",
                 join(
                     args.output_dir, "aspn-ros", "src", "aspn23_ros_interfaces"
@@ -747,7 +722,6 @@ def create_targets(args: argparse.Namespace) -> None:
             name="aspn_ros_translations",
             runner=ASPN_CODEGEN_RUNNER,
             cmd_args=[
-                args.aspn_icd_dir,
                 "-d",
                 join(
                     args.output_dir,

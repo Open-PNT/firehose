@@ -1,8 +1,0 @@
-[wrap-file]
-directory = cxxheaderparser-ba4222560fc1040670b1a917d5d357198e8ec5d6
-
-source_url = https://github.com/robotpy/cxxheaderparser/archive/ba4222560fc1040670b1a917d5d357198e8ec5d6.zip
-source_filename = cxxheaderparser-ba422256.zip
-source_hash = 42564640783058fcaeec3521450ef797d5a36d459f38e3f2f09e3fc019e4e5dc
-
-patch_directory = cxxheaderparser

@@ -4,6 +4,8 @@ from glob import glob
 from os.path import basename, join, splitext
 import yaml
 from typing import List, Dict
+from site import getsitepackages
+from pathlib import Path
 from firehose.backends import (
     AspnCBackend,
     AspnCppBackend,
@@ -179,6 +181,15 @@ def gen_struct(code_gen: Backend, yaml_data: dict):
             process_struct_field(code_gen, ftype, fname, doc_str)
 
 
+def get_aspn_icd_root() -> str:
+    for directory in getsitepackages():
+        if (Path(directory) / 'aspn-2023.dist-info').is_dir():
+            return directory
+    raise Exception(
+        f'Could not find ASPN ICD root directory in any of the following directories {getsitepackages()}'
+    )
+
+
 def main():
     ASPN_ICD_DIRS = ["types", "metadata", "measurements"]
 
@@ -196,12 +207,6 @@ def main():
     }
 
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "aspn_icd_root",
-        type=str,
-        default=None,
-        help="Path to aspn-icd root for input files",
-    )
     parser.add_argument(
         "-d",
         "--output_directory",
@@ -237,7 +242,7 @@ def main():
     base_filenames = []
 
     for directory in ASPN_ICD_DIRS:
-        yamls_in_dir = glob(join(args.aspn_icd_root, directory, '*.yaml'))
+        yamls_in_dir = glob(join(get_aspn_icd_root(), directory, '*.yaml'))
         yamls_in_dir.sort()
         # Don't add duplicate types. First in wins.
         for yaml_in_dir in yamls_in_dir:
