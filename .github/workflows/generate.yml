@@ -1,0 +1,91 @@
+name: Generate
+
+on: [push, pull_request]
+
+jobs:
+    Generate:
+        runs-on: ubuntu-24.04
+        steps:
+        - uses: actions/checkout@v4
+
+        - name: Set up Docker Buildx
+          uses: docker/setup-buildx-action@v3
+
+        - name: Build Docker image
+          uses: docker/build-push-action@v5
+          with:
+              context: docker/
+              push: false
+              tags: firehose
+              cache-from: type=gha
+              cache-to: type=gha,mode=max
+              load: true
+
+        - name: Generate
+          run: |
+              set -xe
+              # TODO remove SSH key stuff and GIT_SSH_COMMAND once repo is public.
+              eval `ssh-agent -s`
+              mkdir ~/.ssh
+              echo '${{ secrets.PRIVATE_SSH_KEY }}' > ~/.ssh/id_ed25519
+              chmod 600 ~/.ssh/id_ed25519
+              docker run --rm -dit -v $(pwd):/firehose -v $(pwd)/.ccache:/home/docker/.ccache -v ~/.ssh:/home/docker/.ssh -e GIT_SSH_COMMAND="ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no" --name firehose firehose bash
+              docker exec -u "$(id -u):$(id -g)" firehose uv sync
+              docker exec -u "$(id -u):$(id -g)" firehose ./generate.py --all --output-dir build/output
+
+        - name: Make output into a git repo
+          run: |
+                # TODO: remove this when no longer a private repository
+                eval `ssh-agent -s`
+                ssh-add - <<< '${{ secrets.PRIVATE_SSH_KEY_WRITE }}'
+                git clone git@github.com:Open-PNT/firehose-outputs.git
+                cd firehose-outputs
+                git checkout $GITHUB_REF_NAME || git checkout -b $GITHUB_REF_NAME
+                cp -r .git ../build/output/
+
+        - name: Commit changes
+          run: |
+                # Harvest commit description before moving on
+                export COMMIT_DESCRIPTION=$(git log -1 --pretty=%B)
+                cd build/output
+                if [ ! -n "$(git status --porcelain)" ]; then
+                    echo "No changes to commit"
+                else
+                    # Commit code changes before meson setup build and tests
+                    git add --all
+                    GIT_COMMITTER_NAME="$(git log -1 --pretty=%cn)" \
+                        GIT_COMMITTER_EMAIL="$(git log -1 --pretty=%ce)" \
+                        GIT_AUTHOR_NAME="$(git log -1 --pretty=%an)" \
+                        GIT_AUTHOR_EMAIL="$(git log -1 --pretty=%ae)" \
+                        git commit -m "Firehose commit ${GITHUB_SHA} code generation" -m "$COMMIT_DESCRIPTION"
+                fi
+
+        - name: Fix ownership of cache
+          run: sudo chown -R $USER:$USER .ccache
+
+        - name: Restore ccache cache before building
+          uses: actions/cache/restore@v4
+          with:
+            path: ${{github.workspace}}/.ccache
+            key: ccache-${{ github.run_id }}
+            restore-keys: ccache-
+
+        - name: Test output
+          run: |
+                # Build and run any tests
+                docker exec -u "$(id -u):$(id -g)" --workdir /firehose/build/output firehose meson setup build -Dwerror=true
+                docker exec -u "$(id -u):$(id -g)" --workdir /firehose/build/output firehose ninja -C build test
+
+        - name: Save ccache cache
+          uses: actions/cache/save@v4
+          with:
+            path: ${{github.workspace}}/.ccache
+            key: ccache-${{ github.run_id }}
+
+        - name: Deploy results
+          run: |
+                # TODO: remove this when no longer a private repository
+                eval `ssh-agent -s`
+                ssh-add - <<< '${{ secrets.PRIVATE_SSH_KEY_WRITE }}'
+                cd build/output
+                git push origin $GITHUB_REF_NAME
