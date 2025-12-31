@@ -6,6 +6,7 @@ project.layout.buildDirectory='../../build/output/lcm/gradle/'
 
 sourceSets {
     main {
+        compileClasspath=files(System.getenv('LCM_JAR_PATH'))
         java.srcDirs=['../../build/output/lcm/java/']
     }
 }

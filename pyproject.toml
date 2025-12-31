@@ -1,0 +1,28 @@
+[project]
+name = 'firehose'
+version = '0.1.0.dev0'
+description = 'A code generation tool'
+readme = 'README.md'
+authors = [ { name = 'IS4S', email = 'pntos@is4s.com' } ]
+requires-python = '>=3.10'
+
+dependencies = [
+    'aspn==2023',
+    'cxxheaderparser==1.6.2',
+    'isort',
+    'lcm>=1,<2',
+    'meson>=1,<1.10',
+    'numpy>=2,<3',
+    'pyyaml',
+]
+
+[dependency-groups]
+dev = [
+    'black==22.12.0',
+    'pip'
+]
+
+[tool.black]
+line-length = 79
+skip-magic-trailing-comma = true
+skip-string-normalization = true

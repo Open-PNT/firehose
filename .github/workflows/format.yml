@@ -19,5 +19,5 @@ jobs:
           run:
                |
                 # If there is a diff, print it first before erroring.
-                black . --skip-string-normalization --skip-magic-trailing-comma --line-length 79 --diff
-                black . --skip-string-normalization --skip-magic-trailing-comma --line-length 79 --check
+                black . --diff
+                black . --check

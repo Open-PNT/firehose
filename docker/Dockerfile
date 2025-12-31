@@ -10,6 +10,7 @@ ENV DEBIAN_FRONTEND noninteractive
 # ca-certificates: To allow HTTPS connections
 # ccache: To decrease compile times when building C/C++ code.
 # clang-format: For formatting source code
+# curl: For installing uv
 # cmake: For building the LCM subproject
 # default-jdk: For Java development
 # git: For development
@@ -20,13 +21,8 @@ ENV DEBIAN_FRONTEND noninteractive
 # liblcm-dev: For LCM (Lightweight Communications and Marshalling) library
 # libpython3-dev: For building python modules via pybind
 # libtinyxml2-dev: For XML parsing
-# meson: For building source code projects
 # ninja-build: For building source code projects
 # openssh-server: for using git over ssh
-# python-is-python3: To start python3 with the `python` command
-# python3-numpy: For xtensor-python
-# python3-pip: For installing pip packages
-# python3.10-venv: For building Python packages
 # software-properties-common: To manage repositories
 # ssh: For using git over ssh
 # vim: For file editing, git commits
@@ -38,6 +34,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   ca-certificates \
   ccache \
   clang-format \
+  curl \
   cmake \
   default-jdk \
   git \
@@ -47,13 +44,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   libglib2.0-dev \
   libpython3-dev \
   libtinyxml2-dev \
-  meson \
   ninja-build \
   openjdk-8-jdk \
-  python-is-python3 \
-  python3-numpy \
-  python3-pip \
-  python3.10-venv \
   software-properties-common \
   ssh \
   vim \
@@ -101,8 +93,8 @@ RUN git clone https://github.com/eProsima/Fast-DDS-Gen.git src/Fast-DDS-Gen \
   && ./gradlew assemble \
   && ./gradlew install --install_path=/usr/local/
 
-# Install Python packages
-RUN pip3 install black pyyaml isort
+# Install uv
+RUN curl -LsSf https://astral.sh/uv/install.sh | UV_UNMANAGED_INSTALL="/usr/local/bin" bash
 
 WORKDIR /firehose
 
@@ -115,3 +107,6 @@ ENV ENV_TOKEN_URL=$TOKEN_URL
 
 COPY user_bootstrap.sh /
 ENTRYPOINT ["/user_bootstrap.sh"]
+
+ENV PATH=/firehose/.venv/bin:$PATH
+ENV VIRTUAL_ENV=/firehose/.venv
