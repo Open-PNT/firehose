@@ -16,12 +16,5 @@ echo "ALL ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
 
 export HOME="/home/$user"
 
-# If in CI, rewrite SSH URLs
-if [[ -n $ENV_TOKEN_URL ]]; then
-  echo -e \
-  "[url \"$ENV_TOKEN_URL\"]\n\tinsteadOf = git@git.aspn.us:\n\tinsteadOf = ssh://git@git.aspn.us/" \
-  > /etc/gitconfig
-fi
-
 # Run as account created above
 exec runuser -g "$group" -u "$user" -- /bin/bash -c "$scl_args $@"
