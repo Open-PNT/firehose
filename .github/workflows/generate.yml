@@ -11,6 +11,12 @@ jobs:
         - name: Set up Docker Buildx
           uses: docker/setup-buildx-action@v3
 
+        # Harvest UID and GID for building the docker container
+        - name: Get Runner UID and GID
+          run: |
+            echo "UID=$(id -u)" >> $GITHUB_ENV
+            echo "GID=$(id -g)" >> $GITHUB_ENV
+
         - name: Build Docker image
           uses: docker/build-push-action@v5
           with:
@@ -20,6 +26,9 @@ jobs:
               cache-from: type=gha
               cache-to: type=gha,mode=max
               load: true
+              build-args: |
+                UID=${{ env.UID }}
+                GID=${{ env.GID }}
 
         - name: Generate
           run: |
@@ -30,8 +39,8 @@ jobs:
               echo '${{ secrets.PRIVATE_SSH_KEY }}' > ~/.ssh/id_ed25519
               chmod 600 ~/.ssh/id_ed25519
               docker run --rm -dit -v $(pwd):/firehose -v $(pwd)/.ccache:/home/docker/.ccache -v ~/.ssh:/home/docker/.ssh -e GIT_SSH_COMMAND="ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no" --name firehose firehose bash
-              docker exec -u "$(id -u):$(id -g)" firehose uv sync
-              docker exec -u "$(id -u):$(id -g)" firehose ./generate.py --all --output-dir build/output
+              docker exec firehose uv sync
+              docker exec firehose ./generate.py --all --output-dir build/output
 
         - name: Make output into a git repo
           run: |
@@ -73,8 +82,8 @@ jobs:
         - name: Test output
           run: |
                 # Build and run any tests
-                docker exec -u "$(id -u):$(id -g)" --workdir /firehose/build/output firehose meson setup build -Dwerror=true
-                docker exec -u "$(id -u):$(id -g)" --workdir /firehose/build/output firehose ninja -C build test
+                docker exec --workdir /firehose/build/output firehose meson setup build -Dwerror=true
+                docker exec --workdir /firehose/build/output firehose ninja -C build test
 
         - name: Save ccache cache
           uses: actions/cache/save@v4
