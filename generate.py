@@ -74,10 +74,8 @@ FIREMAN = r"""
 
 # Default directory paths
 FIREHOSE_ROOT = os.path.abspath(os.path.dirname(__file__))
-DEFAULT_BUILD_DIR = join(FIREHOSE_ROOT, "build")
-DEFAULT_SUBPROJECTS_DIR = join(FIREHOSE_ROOT, "subprojects")
 DEFAULT_STAGING_INPUT_DIR = join(FIREHOSE_ROOT, "staging")
-DEFAULT_OUTPUT_DIR = join(FIREHOSE_ROOT, "build", "output")
+DEFAULT_OUTPUT_DIR = join(FIREHOSE_ROOT, "output")
 
 # Runners
 ASPN_CODEGEN_RUNNER = join(FIREHOSE_ROOT, "runners", "convert_aspn_yaml.py")
@@ -85,14 +83,7 @@ FASTDDS_RUNNER = join(FIREHOSE_ROOT, "runners", "gen_fastdds.py")
 
 # Add some PYTHONPATH entries necessary for the runners to work
 os.environ["PYTHONPATH"] = os.pathsep.join(
-    [
-        FIREHOSE_ROOT,
-        join(
-            DEFAULT_SUBPROJECTS_DIR,
-            "cxxheaderparser-ba4222560fc1040670b1a917d5d357198e8ec5d6",
-        ),
-        os.environ.get("PYTHONPATH", ""),
-    ]
+    [FIREHOSE_ROOT, os.environ.get("PYTHONPATH", "")]
 )
 
 
@@ -240,11 +231,10 @@ def clean_output_directory(output_dir: str) -> None:
         os.chdir(original_dir)
 
 
-def configure_build_directory(
-    build_dir: str, aspn_icd_dir: str, extra_icd_files_dir: str | None
+def configure_extra_icds(
+    aspn_icd_dir: str, extra_icd_files_dir: str | None
 ) -> None:
     """
-    Configures the Meson build directory, overwriting any existing settings.
     Adds any additional YAML files from extra_icd_files_dir ti aspn_icd_dir.
     """
 
@@ -274,21 +264,6 @@ def configure_build_directory(
                     print(
                         f"Error: Unknown file type for {file_name}. File was not copied."
                     )
-
-    try:
-        subprocess.check_call(["meson", "setup", build_dir])
-    except subprocess.CalledProcessError as e:
-        print(
-            f"Error configuring Meson build directory: \n{e}\nWiping retrying..."
-        )
-        subprocess.check_call(["meson", "setup", build_dir, '--wipe'])
-
-    try:
-        subprocess.check_call(["ninja", "-C", build_dir])
-    except subprocess.CalledProcessError as e:
-        print(f"Error running ninja: \n{e}\nWiping meson and retrying...")
-        subprocess.check_call(["meson", "setup", build_dir, '--wipe'])
-        subprocess.check_call(["ninja", "-C", build_dir])
 
 
 def collect_all_targets(targets_to_generate, targets_list):
@@ -386,7 +361,7 @@ def run_generation_targets(targets_to_generate, all_targets):
         pool.join()
 
 
-def run_lcm_gen(build_dir: str, output_dir: str) -> None:
+def run_lcm_gen(output_dir: str) -> None:
     """
     Runs the LCM code generation commands.
     This must only be run AFTER the LCM ICD files have been generated.
@@ -465,9 +440,9 @@ def _build_lcm_jar(lcm_staging_dir: str) -> None:
 
 
 # Generate the LCM code after the aspn lcm files are generated
-def post_aspn_lcm(build_dir: str, output_dir: str, staging_dir: str) -> None:
+def post_aspn_lcm(output_dir: str, staging_dir: str) -> None:
     # Run the lcm codegen
-    run_lcm_gen(build_dir, output_dir)
+    run_lcm_gen(output_dir)
 
     # Build the LCM JAR and then clean up
     _build_lcm_jar(f"{staging_dir}/lcm")
@@ -583,14 +558,6 @@ def get_args() -> argparse.Namespace:
         type=normalized_and_checked_path,
     )
     parser.add_argument(
-        "-b",
-        "--build-dir",
-        default=DEFAULT_BUILD_DIR,
-        metavar="",
-        help=("Build directory. Defaults to " f"{DEFAULT_BUILD_DIR}"),
-        type=normalized_and_created_path,
-    )
-    parser.add_argument(
         "-o",
         "--output-dir",
         default=DEFAULT_OUTPUT_DIR,
@@ -635,14 +602,7 @@ def get_args() -> argparse.Namespace:
         help="Interactive mode to select output formats",
     )
 
-    args = parser.parse_args()
-
-    # Additional validation
-    if not args.output_dir.startswith(args.build_dir):
-        raise ValueError(
-            "Output directory must be a subdirectory of the build directory"
-        )
-    return args
+    return parser.parse_args()
 
 
 def create_targets(args: argparse.Namespace) -> None:
@@ -663,11 +623,7 @@ def create_targets(args: argparse.Namespace) -> None:
             runner=ASPN_CODEGEN_RUNNER,
             cmd_args=["-d", join(args.output_dir, "aspn-lcm"), "-o", "lcm"],
             post_run=post_aspn_lcm,
-            post_run_args=[
-                args.build_dir,
-                args.output_dir,
-                args.staging_input_dir,
-            ],
+            post_run_args=[args.output_dir, args.staging_input_dir],
         ),
         FirehoseTarget(
             name="aspn_dds_idl",
@@ -772,9 +728,7 @@ def main() -> None:
 
     clean_output_directory(args.output_dir)
 
-    configure_build_directory(
-        args.build_dir, args.aspn_icd_dir, args.extra_icd_files_dir
-    )
+    configure_extra_icds(args.aspn_icd_dir, args.extra_icd_files_dir)
 
     run_generation_targets(targets_to_generate, all_targets)
 

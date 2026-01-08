@@ -4,12 +4,8 @@
 # clangd
 .cache
 
-# Ignore meson artifacts
-/subprojects/*/
-!subprojects/packagefiles
-
-# Build directory
-build*/
+# Output directory
+output/
 
 # Python virtual environment
 .venv
