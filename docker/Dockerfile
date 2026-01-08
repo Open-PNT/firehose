@@ -101,8 +101,15 @@ WORKDIR /firehose
 # Necessary to encode certain characters when compiling the Java code.
 ENV LANG=C.UTF-8
 
-COPY user_bootstrap.sh /
-ENTRYPOINT ["/user_bootstrap.sh"]
+# Set up non-root user account
+ARG GID
+ARG UID
+RUN groupadd docker --non-unique -g $GID
+RUN useradd docker --non-unique -m -u $UID -g $GID
+RUN chown docker:docker /home/docker
+RUN echo "ALL ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+ENV HOME="/home/docker"
+USER docker
 
 ENV PATH=/firehose/.venv/bin:$PATH
 ENV VIRTUAL_ENV=/firehose/.venv
