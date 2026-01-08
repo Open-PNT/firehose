@@ -27,8 +27,10 @@ docker exec firehose uv sync
 Then generate with:
 
 ```shell
-docker exec firehose ./generate.py --all --output-dir build/output
+docker exec firehose ./generate.py --all
 ```
+
+If the above command was successful, you should be able to see the generated outputs in `output/`.
 
 To spin down the docker container, run:
 
@@ -66,10 +68,8 @@ options:
 
   -a, --all                 Generate all output formats
 
-  -b , --build-dir          Build directory. Defaults to $PWD/build
-
   -o , --output-dir         Directory to place generated output files.
-                            Defaults to [build_dir]/output
+                            Defaults to output
   -s , --staging-input-dir  Staging directory containing any additional non-generated
                             files to push to firehose-outputs. Defaults to $PWD/staging
 
@@ -146,7 +146,7 @@ This will look for all `*.yaml` files inside of `dir1` and `dir2` and generate a
 ASPN C/C++ and python code, along with your extension messages.
 
 All output (including all files in `./staging`) will still be placed in the default output directory
-`./build/output`
+`./output`
 
 ## **Adding custom ASPN messages to repo that uses firehose-outputs**
 
@@ -163,12 +163,12 @@ when necessary.
 
 1.   Generate the new firehose-outputs locally the steps above.  For example:
      ```shell
-     python3 generate.py -b ./build -o ./build/output --extra-icd-files-dir ./custom_messages --all
+     python3 generate.py -o ./output --extra-icd-files-dir ./custom_messages --all
       ```
 2.  Copy the new outputs over the existing ones in the `firehose-outputs` subproject in the
     downstream project.
     ```shell
-    cp -r ./build/output/* ../<project>/subprojects/firehose-outputs/
+    cp -r ./output/* ../<project>/subprojects/firehose-outputs/
     ```
 3.  Rebuild the downstream project and the new custom messages should be available.
 

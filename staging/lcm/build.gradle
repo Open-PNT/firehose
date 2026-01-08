@@ -2,19 +2,19 @@ plugins {
     id 'java'
 }
 
-project.layout.buildDirectory='../../build/output/lcm/gradle/'
+project.layout.buildDirectory='../../output/lcm/gradle/'
 
 sourceSets {
     main {
         compileClasspath=files(System.getenv('LCM_JAR_PATH'))
-        java.srcDirs=['../../build/output/lcm/java/']
+        java.srcDirs=['../../output/lcm/java/']
     }
 }
 
 jar {
     // Renamed to `archiveFileName` & `destinationDirectory` past Gradle v8.0
     archiveName='aspn_messages.jar'
-    destinationDir=file('../../build/output/lcm/jar/')
+    destinationDir=file('../../output/lcm/jar/')
     includes=['**/*.class']
     preserveFileTimestamps=false
     reproducibleFileOrder=true

@@ -40,7 +40,7 @@ jobs:
               chmod 600 ~/.ssh/id_ed25519
               docker run --rm -dit -v $(pwd):/firehose -v $(pwd)/.ccache:/home/docker/.ccache -v ~/.ssh:/home/docker/.ssh -e GIT_SSH_COMMAND="ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no" --name firehose firehose bash
               docker exec firehose uv sync
-              docker exec firehose ./generate.py --all --output-dir build/output
+              docker exec firehose ./generate.py --all
 
         - name: Make output into a git repo
           run: |
@@ -50,13 +50,13 @@ jobs:
                 git clone git@github.com:Open-PNT/firehose-outputs.git
                 cd firehose-outputs
                 git checkout $GITHUB_REF_NAME || git checkout -b $GITHUB_REF_NAME
-                cp -r .git ../build/output/
+                cp -r .git ../output/
 
         - name: Commit changes
           run: |
                 # Harvest commit description before moving on
                 export COMMIT_DESCRIPTION=$(git log -1 --pretty=%B)
-                cd build/output
+                cd output
                 if [ ! -n "$(git status --porcelain)" ]; then
                     echo "No changes to commit"
                 else
@@ -82,8 +82,8 @@ jobs:
         - name: Test output
           run: |
                 # Build and run any tests
-                docker exec --workdir /firehose/build/output firehose meson setup build -Dwerror=true
-                docker exec --workdir /firehose/build/output firehose ninja -C build test
+                docker exec --workdir /firehose/output firehose meson setup build -Dwerror=true
+                docker exec --workdir /firehose/output firehose ninja -C build test
 
         - name: Save ccache cache
           uses: actions/cache/save@v4
@@ -96,5 +96,5 @@ jobs:
                 # TODO: remove this when no longer a private repository
                 eval `ssh-agent -s`
                 ssh-add - <<< '${{ secrets.PRIVATE_SSH_KEY_WRITE }}'
-                cd build/output
+                cd output
                 git push origin $GITHUB_REF_NAME
