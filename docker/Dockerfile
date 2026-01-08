@@ -4,52 +4,36 @@ FROM ubuntu:22.04
 ENV DEBIAN_FRONTEND noninteractive
 
 # Install common dependencies
-# apt-transport-https: For using HTTPS to communicate with APT repositories
-# bash-completion: For tab completion while using git, etc.
 # build-essential: For compiling ASPN-C, etc.
-# ca-certificates: To allow HTTPS connections
 # ccache: To decrease compile times when building C/C++ code.
 # clang-format: For formatting source code
 # curl: For installing uv
 # cmake: For building the LCM subproject
-# default-jdk: For Java development
 # git: For development
-# gnupg: For package verification
 # gradle: For building LCM jar
-# libasio-dev: For developing applications using ASIO
-# libglib2.0-dev: To build LCM
-# liblcm-dev: For LCM (Lightweight Communications and Marshalling) library
+# libasio-dev: For building Fast-DDS
+# libglib2.0-dev: To run LCM
 # libpython3-dev: For building python modules via pybind
-# libtinyxml2-dev: For XML parsing
+# libtinyxml2-dev: For building Fast-DDS
 # ninja-build: For building source code projects
-# openssh-server: for using git over ssh
-# software-properties-common: To manage repositories
-# ssh: For using git over ssh
-# vim: For file editing, git commits
-# wget: For retrieving files via HTTP, HTTPS, and FTP
+# TODO: remove this dependency when ASPN-ICD is public
+# openssh-server: for using SSH to clone git repos
+# openjdk-8-jdk : For Java development
 RUN apt-get update && apt-get install -y --no-install-recommends \
-  apt-transport-https \
-  bash-completion \
   build-essential \
-  ca-certificates \
   ccache \
   clang-format \
   curl \
   cmake \
-  default-jdk \
   git \
-  gnupg \
   gradle \
   libasio-dev \
   libglib2.0-dev \
   libpython3-dev \
   libtinyxml2-dev \
   ninja-build \
+  openssh-server \
   openjdk-8-jdk \
-  software-properties-common \
-  ssh \
-  vim \
-  wget \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 
