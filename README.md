@@ -1,104 +1,58 @@
 # **Firehose - Environment Setup**
 
-> [!NOTE]
-> If developing with ASPN-ROS, see
-> [Generate ROS Ubuntu Development Packages via Docker](https://git.aspn.us/pntos/firehose/-/tree/feature/aspn-ros?ref_type=heads#generate-ros-ubuntu-development-packages-via-docker).
+## **Option 1:** Use Docker manually
 
-## **Option 1:** VS Code with Dev Containers extension
+To build the container, run
 
-A container exists in the docker folder to assist with code generation and
-library building. If you are using VS Code, install the Microsoft "Dev
-Containers" extension and it should prompt you to build and run in the
-container, which has all dependencies already installed.
-
-### **SSH keys**
-
-In order to use SSH over git, the SSH keys need to be forwarded to the
-container. The VS Code DevContainer extension will forward the current SSH
-agent session automatically. As long as your keys are loaded into the agent,
-they should be accessible by the container. Many OSes start `ssh-agent`
-automatically.
-
-To test whether your SSH keys are loaded on a Linux host, do the following:
-
-```sh
-ssh-add -l
+```shell
+docker pull ubuntu:22.04
+docker build --build-arg UID=$(id -u) --build-arg GID=$(id -g) -f docker/Dockerfile -t firehose - < docker/Dockerfile
 ```
 
-You should see a result list with at least 1 entry. Something like this:
-```bash
-2048 SHA256:abc123abc123abc123abc123abc123abc123abc1 user@host (RSA)
-256 SHA256:def456def456def456def456def456def456def4 user@host (ECDSA)
-521 SHA256:ghi789ghi789ghi789ghi789ghi789ghi789ghi7 user@host (ED25519)
+Now you should have an image called `firehose` available for use.
+
+To spin up the container, run:
+
+```shell
+# TODO: remove SSH mounting once repo is public.
+docker run --rm -dit -v $(pwd):/firehose -v ~/.ccache:/home/docker/.ccache -v ~/.ssh:/home/docker/.ssh -e GIT_SSH_COMMAND="ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no" --name firehose firehose bash
 ```
 
-### **Troubleshooting**
----
+Download all Python dependencies using:
 
-```
-Error connecting to agent: No such file or directory
-```
-The SSH agent is not running. See documentation for your operating system for
-the expected way to start an SSH agent.
-
-```
-The agent has no identities.
-```
-No SSH keys are loaded. One way to load them on Linux is simply:
-```sh
-ssh-add
+```shell
+docker exec firehose uv sync
 ```
 
-You will be prompted for your SSH passphrase. Once that is successful,
-`ssh-add -l` will list your key(s). Now they should be accessible in the
-container as well. A container rebuild may be needed.
+Then generate with:
 
-## **Option 2:** Use Docker manually
-
-An alternate way to use Docker is to build your own container manually with
-the file `docker/Dockerfile`.
-
-In Linux you would do the following **from the root of the firehose repo**
-```bash
-docker build -f docker/Dockerfile -t firehose-codegen docker
+```shell
+docker exec firehose ./generate.py --all --output-dir build/output
 ```
 
-Now you should have an image called `firehose-codegen` available for use.
+To spin down the docker container, run:
 
-Again, from the root of the firehose repo, use the following command to
-2-way-bind the firehose repo on your host machine to an `firehose-codegen`
-container.
-
-We will also enable ssh-agent forwarding from the host system so that you can
-use git over ssh inside of the container. See the "SSH Keys" section under
-**Option 1** above.
-
-```bash
-docker run \
-    --privileged \
-    -it \
-    -e SSH_AUTH_SOCK=/ssh-agent \
-    -e GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=no" \
-    -v "$SSH_AUTH_SOCK:/ssh-agent" \
-    -v "$HOME/.ssh:/root/.ssh" \
-    -v $(pwd):/firehose firehose-codegen \
-    bash
+```shell
+docker stop firehose
 ```
 
-This will put you in the working directory of the docker image, which is
-`/firehose`.
+## **Option 2:** Use bare metal (at your own risk)
 
-## **Option 3:** Use bare metal (at your own risk)
+Install the packages from `docker/Dockerfile` on your operating system, modifying as necessary if
+you aren't using the Ubuntu LTS version in the `firehose` image.
 
-Install the packages from `docker/Dockerfile` on your operating system,
-modifying as necessary if you aren't using the Ubuntu LTS version in the
-`firehose-codegen` image. This is brittle and **not recommended** as
-dependencies from elsewhere could cause some hard-to-find bugs.
+Use `uv` to download the necessary Python dependencies, and activate your virtual environment. For
+example:
+
+```shell
+uv sync
+source .venv/bin/activate
+```
 
 # **Code Generation [`generate.py`]**
 
-Use the convenience wrapper script `generate.py` in the root directory to
-easily build, generate, and stage outputs all at once.
+Use the convenience wrapper script `generate.py` in the root directory to easily build, generate,
+and stage outputs all at once.
 
 ```
 python3 generate.py --help
@@ -136,30 +90,27 @@ Some examples of how to use the script for various scenarios follow:
 
 ## **Interactive mode**
 
-A good place to start familiarizing yourself is to use the interactive mode.
+A good place to start familiarizing yourself is to use the interactive mode. If you don't specify
+any `--targets` or `--all`, you will be automatically put into `--interactive` mode. This will hold
+your hand through all of the parameters and allow you to pick and choose what codegen output you
+want.
 
-If you don't specify any `--targets` or `--all`, you will be automatically put
-into `--interactive` mode.
-
-This will hold your hand through all of the parameters and allow you to pick
-and choose what codegen output you want.
-
-```bash
+```shell
 python3 generate.py
 ```
 
 ## **Default settings**
 
-```bash
+```shell
 python3 generate.py --all
 ```
+
 This is equivalent to running:
-```bash
+
+```shell
 python3 generate.py \
-    --aspn-icd-dir ./subprojects/aspn-icd-release-2023 \
-    --build-dir ./build \
-    --output-dir ./build/output \
-    --staging-input-dir ./build/staging \
+    --output-dir ./output \
+    --staging-input-dir ./staging \
     --targets \
         aspn_c \
         aspn_dds_idl \
@@ -168,60 +119,63 @@ python3 generate.py \
         aspn_lcm \
         aspn_py \
         aspn_lcm_translations \
-        aspn_c_marshaling \
         aspn_ros \
         aspn_ros_translations
 ```
 
 ## **Custom ASPN ICD directory**
 
-```bash
+```shell
 python3 generate.py --aspn-icd-dir /some/path/to/custom/dir --targets aspn_cpp
 ```
-This will look for all `*.yaml` files inside of `/some/path/to/custom/dir` and
-generate only the c++ output for the files in your custom ASPN ICD directory.
+
+This will look for all `*.yaml` files inside of `/some/path/to/custom/dir` and generate only the c++
+output for the files in your custom ASPN ICD directory.
 
 ## **Extending/Adding ASPN messages**
 
-If you still want to generate the full normal suite of Aspn messages, but just
-want to **add** your own custom extension messages, simply put the YAML files
-for the extension messages in their own directory or directories like so:
-```bash
+If you still want to generate the full normal suite of Aspn messages, but just want to **add** your
+own custom extension messages, simply put the YAML files for the extension messages in their own
+directory or directories like so:
+
+```shell
 python3 generate.py --extra-icd-files-dir /path/to/custom_yamls --targets aspn_cpp aspn_c aspn_py
 ```
-This will look for all `*.yaml` files inside of `dir1` and `dir2` and generate
-all of the standard ASPN C/C++ and python code, along with your extension
-messages.
 
-All output (including all files in `./staging`) will still be placed in the
-default output directory `./build/output`
+This will look for all `*.yaml` files inside of `dir1` and `dir2` and generate all of the standard
+ASPN C/C++ and python code, along with your extension messages.
+
+All output (including all files in `./staging`) will still be placed in the default output directory
+`./build/output`
 
 ## **Adding custom ASPN messages to repo that uses firehose-outputs**
+
 If you'd like to add your own custom messages you can follow the example below, substituting values
 when necessary.
 
 ### **Assumptions**
+
 - Your CWD is the firehose root.
 - All YAML files for the messages that you'd like to add or overwrite are in `./custom_messages`.
 - You have downstream project checked out at `../<project>`.
 
 ### **Steps**
-1.   Generate the new firehose-outputs locally the steps above. For example:
-     ```bash
+
+1.   Generate the new firehose-outputs locally the steps above.  For example:
+     ```shell
      python3 generate.py -b ./build -o ./build/output --extra-icd-files-dir ./custom_messages --all
       ```
 2.  Copy the new outputs over the existing ones in the `firehose-outputs` subproject in the
     downstream project.
-    ```bash
+    ```shell
     cp -r ./build/output/* ../<project>/subprojects/firehose-outputs/
     ```
 3.  Rebuild the downstream project and the new custom messages should be available.
 
-**Note-** Once you are satisfied with the results after testing, if you have
-push rights for `firehose`, you can create a new branch and point at the
-proper aspn-icd branch with your custom messages on it. Then wait for the CI
-to build the subsequent `firehose-outputs` branch and point the
-`firehose-outputs.wrap` `revision` to that new commit in the project.
+**Note-** Once you are satisfied with the results after testing, if you have push rights for
+`firehose`, you can create a new branch and point at the proper aspn-icd branch with your custom
+messages on it.  Then wait for the CI to build the subsequent `firehose-outputs` branch and point
+the `firehose-outputs.wrap` `revision` to that new commit in the project.
 
 # Building ASPN-ROS
 
