@@ -9,7 +9,7 @@ resolution-markers = [
 [[package]]
 name = "aspn"
 version = "2023"
-source = { git = "ssh://git@github.com/Open-PNT/ASPN-ICD.git?rev=9e853bf68eb5f26c6bb339e43cc17ed717d65761#9e853bf68eb5f26c6bb339e43cc17ed717d65761" }
+source = { git = "ssh://git@github.com/Open-PNT/ASPN-ICD.git?rev=b2e7b64067b9cd0171f02ffe773c1174a7e2eb96#b2e7b64067b9cd0171f02ffe773c1174a7e2eb96" }
 
 [[package]]
 name = "black"
@@ -84,7 +84,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "aspn", git = "ssh://git@github.com/Open-PNT/ASPN-ICD.git?rev=9e853bf68eb5f26c6bb339e43cc17ed717d65761" },
+    { name = "aspn", git = "ssh://git@github.com/Open-PNT/ASPN-ICD.git?rev=b2e7b64067b9cd0171f02ffe773c1174a7e2eb96" },
     { name = "cxxheaderparser", specifier = "==1.6.2" },
     { name = "isort" },
     { name = "lcm", specifier = ">=1,<2" },
