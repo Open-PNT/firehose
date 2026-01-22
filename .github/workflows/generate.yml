@@ -33,12 +33,7 @@ jobs:
         - name: Generate
           run: |
               set -xe
-              # TODO remove SSH key stuff and GIT_SSH_COMMAND once repo is public.
-              eval `ssh-agent -s`
-              mkdir ~/.ssh
-              echo '${{ secrets.PRIVATE_SSH_KEY }}' > ~/.ssh/id_ed25519
-              chmod 600 ~/.ssh/id_ed25519
-              docker run --rm -dit -v $(pwd):/firehose -v $(pwd)/.ccache:/home/docker/.ccache -v ~/.ssh:/home/docker/.ssh -e GIT_SSH_COMMAND="ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no" --name firehose firehose bash
+              docker run --rm -dit -v $(pwd):/firehose -v $(pwd)/.ccache:/home/docker/.ccache --name firehose firehose bash
               docker exec firehose uv sync
               docker exec firehose ./generate.py --all
 
