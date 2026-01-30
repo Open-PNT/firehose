@@ -14,8 +14,16 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /output
 
-# Run build_ros.sh as docker user via user_bootstrap.sh
-COPY user_bootstrap.sh /
+# Set up non-root user account
+ARG GID
+ARG UID
+RUN groupadd docker --non-unique -g $GID
+RUN useradd docker --non-unique -m -u $UID -g $GID
+RUN chown docker:docker /home/docker
+RUN echo "ALL ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+ENV HOME="/home/docker"
+USER docker
+
+# Run build_ros.sh
 COPY build_ros.sh /
-ENTRYPOINT ["/user_bootstrap.sh"]
 CMD ["/build_ros.sh"]
