@@ -16,8 +16,6 @@ ENV DEBIAN_FRONTEND noninteractive
 # libpython3-dev: For building python modules via pybind
 # libtinyxml2-dev: For building Fast-DDS
 # ninja-build: For building source code projects
-# TODO: remove this dependency when ASPN-ICD is public
-# openssh-server: for using SSH to clone git repos
 # openjdk-8-jdk : For Java development
 RUN apt-get update && apt-get install -y --no-install-recommends \
   build-essential \
