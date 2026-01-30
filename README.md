@@ -14,8 +14,7 @@ Now you should have an image called `firehose` available for use.
 To spin up the container, run:
 
 ```shell
-# TODO: remove SSH mounting once repo is public.
-docker run --rm -dit -v $(pwd):/firehose -v ~/.ccache:/home/docker/.ccache -v ~/.ssh:/home/docker/.ssh -e GIT_SSH_COMMAND="ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no" --name firehose firehose bash
+docker run --rm -dit -v $(pwd):/firehose -v ~/.ccache:/home/docker/.ccache --name firehose firehose bash
 ```
 
 Download all Python dependencies using:

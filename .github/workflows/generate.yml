@@ -39,7 +39,6 @@ jobs:
 
         - name: Make output into a git repo
           run: |
-                # TODO: remove this when no longer a private repository
                 eval `ssh-agent -s`
                 ssh-add - <<< '${{ secrets.PRIVATE_SSH_KEY_WRITE }}'
                 git clone git@github.com:Open-PNT/firehose-outputs.git
@@ -93,7 +92,6 @@ jobs:
 
         - name: Deploy results
           run: |
-                # TODO: remove this when no longer a private repository
                 eval `ssh-agent -s`
                 ssh-add - <<< '${{ secrets.PRIVATE_SSH_KEY_WRITE }}'
                 cd output
