@@ -214,20 +214,20 @@ yourself. You can use the same Docker container that the CI uses.
 
 To manually build one of these ROS containers, do
 ```bash
-docker build -t firehose-ros:humble --build-arg ROS_DISTRO=humble -f docker/Dockerfile.ros docker
+docker build -t firehose-ros:humble --build-arg ROS_DISTRO=humble --build-arg UID=$(id -u) --build-arg GID=$(id -g) -f docker/Dockerfile.ros docker
 ```
 or
 ```bash
-docker build -t firehose-ros:jazzy --build-arg ROS_DISTRO=jazzy -f docker/Dockerfile.ros docker
+docker build -t firehose-ros:jazzy --build-arg ROS_DISTRO=jazzy --build-arg UID=$(id -u) --build-arg GID=$(id -g) -f docker/Dockerfile.ros docker
 ```
 
 To run it (which builds the ROS stuff; this can take several minutes), do
 ```bash
-docker run -it -v $(pwd)/build/output:/output firehose-ros:humble
+docker run -it -v $(pwd)/output:/output firehose-ros:humble
 ```
 or
 ```bash
-docker run -it -v $(pwd)/build/output:/output firehose-ros:jazzy
+docker run -it -v $(pwd)/output:/output firehose-ros:jazzy
 ```
 
 Now the `[output-dir]/ros_devel/humble` or `[output-dir]/ros_devel/jazzy`
