@@ -30,6 +30,36 @@ jobs:
                 UID=${{ env.UID }}
                 GID=${{ env.GID }}
 
+        - name: Build ROS Humble Docker image
+          uses: docker/build-push-action@v5
+          with:
+              context: docker/
+              file: docker/Dockerfile.ros
+              push: false
+              tags: firehose-humble
+              cache-from: type=gha,scope=ros-humble
+              cache-to: type=gha,mode=max,scope=ros-humble
+              load: true
+              build-args: |
+                UID=${{ env.UID }}
+                GID=${{ env.GID }}
+                ROS_DISTRO=humble
+
+        - name: Build ROS Jazzy Docker image
+          uses: docker/build-push-action@v5
+          with:
+              context: docker/
+              file: docker/Dockerfile.ros
+              push: false
+              tags: firehose-jazzy
+              cache-from: type=gha,scope=ros-jazzy
+              cache-to: type=gha,mode=max,scope=ros-jazzy
+              load: true
+              build-args: |
+                UID=${{ env.UID }}
+                GID=${{ env.GID }}
+                ROS_DISTRO=jazzy
+
         - name: Generate
           run: |
               set -xe
@@ -46,16 +76,28 @@ jobs:
                 git checkout $GITHUB_REF_NAME || git checkout -b $GITHUB_REF_NAME
                 cp -r .git ../output/
 
+        - name: Build ASPN-ROS Ubuntu packages
+          run: |
+              cd output
+              # Build generated ros_devel/ stuff in ROS containers only if aspn-ros/ has changed
+              if [ ! -n "$(git status ./aspn-ros --porcelain)" ]; then
+                echo "No ROS changes to push. Skipping rebuild of ROS Ubuntu dev packages."
+              else
+                docker run --rm -v $(pwd):/output firehose-humble
+                docker run --rm -v $(pwd):/output firehose-jazzy
+                git add ./ros_devel  # Stage ros_devel/ changes
+              fi
+
         - name: Commit changes
           run: |
                 # Harvest commit description before moving on
                 export COMMIT_DESCRIPTION=$(git log -1 --pretty=%B)
                 cd output
-                if [ ! -n "$(git status --porcelain)" ]; then
+                if [ ! -n "$(git status --porcelain . -- ':!./ros_devel')" ]; then
                     echo "No changes to commit"
                 else
                     # Commit code changes before meson setup build and tests
-                    git add --all
+                    git add . ':!./ros_devel'  # Exclude ros_devel/ (let it be handled above)
                     GIT_COMMITTER_NAME="$(git log -1 --pretty=%cn)" \
                         GIT_COMMITTER_EMAIL="$(git log -1 --pretty=%ce)" \
                         GIT_AUTHOR_NAME="$(git log -1 --pretty=%an)" \
