@@ -64,6 +64,11 @@ jobs:
                         git commit -m "Firehose commit ${GITHUB_SHA} code generation" -m "$COMMIT_DESCRIPTION"
                 fi
 
+        - name: Test static typing of output
+          run: |
+                # Run mypy
+                docker exec --workdir /firehose/output/aspn-py firehose mypy . --strict
+
         - name: Fix ownership of cache
           run: sudo chown -R $USER:$USER .ccache
 
@@ -74,7 +79,7 @@ jobs:
             key: ccache-${{ github.run_id }}
             restore-keys: ccache-
 
-        - name: Test output
+        - name: Test building output
           run: |
                 # Build and run any tests
                 docker exec --workdir /firehose/output firehose meson setup build -Dwerror=true
