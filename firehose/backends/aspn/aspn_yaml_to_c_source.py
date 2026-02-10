@@ -112,7 +112,7 @@ class AspnYamlToCSource(Backend):
         arr_type: str,
         nullable: bool = False,
     ):
-        copy_array = f'self->{arr_name} = ({arr_type}*)calloc(sizeof({arr_type}), {array_len_ptr_name});'
+        copy_array = f'self->{arr_name} = ({arr_type}*)calloc({array_len_ptr_name}, sizeof({arr_type}));'
         if arr_type.startswith(f"{ASPN_PREFIX}Type"):
             basename = pascal_to_snake(arr_type)
             copy_array = f'''
@@ -180,7 +180,7 @@ class AspnYamlToCSource(Backend):
             if ({mat_name} != NULL && {mat_ptr_x} != 0 && {mat_ptr_y} != 0) {{
                 {mat_name}_elements = {mat_ptr_x} * {mat_ptr_y};
                 if ({mat_name}_elements > 0) {{
-                    self->{mat_name} = ({arr_type}*)calloc(sizeof({arr_type}), {mat_name}_elements);
+                    self->{mat_name} = ({arr_type}*)calloc({mat_name}_elements, sizeof({arr_type}));
                     memcpy(self->{mat_name}, {mat_name}, {mat_name}_elements * sizeof({arr_type}));
                 }} else {{
                     fprintf(stderr, "An error occurred: (%s * %s) defines the row and column lengths of '%s' and both must be a positive integer", "{mat_ptr_x}", "{mat_ptr_y}", "{mat_name}");
