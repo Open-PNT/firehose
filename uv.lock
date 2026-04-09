@@ -111,7 +111,7 @@ dev = [
 requires-dist = [
     { name = "aspn", git = "https://github.com/Open-PNT/ASPN-ICD.git?rev=49473ac21ff300d861f7266a9ca38c4fd2b7265a" },
     { name = "black", specifier = "==26.3.1" },
-    { name = "cxxheaderparser", specifier = "==1.6.2" },
+    { name = "cxxheaderparser", git = "https://github.com/robotpy/cxxheaderparser.git?rev=ba4222560fc1040670b1a917d5d357198e8ec5d6" },
     { name = "isort" },
     { name = "lcm", specifier = ">=1,<2" },
     { name = "numpy", specifier = ">=2,<3" },
