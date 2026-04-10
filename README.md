@@ -152,29 +152,25 @@ All output (including all files in `./staging`) will still be placed in the defa
 If you'd like to add your own custom messages you can follow the example below, substituting values
 when necessary.
 
-### **Assumptions**
+### Optional 1: Manual
 
-- Your CWD is the firehose root.
-- All YAML files for the messages that you'd like to add or overwrite are in `./custom_messages`.
-- You have downstream project checked out at `../<project>`.
+You can always make manual changes to a branch of aspn-generated. For example, if you just need an
+extension message in ASPN-LCM then you could write that `.lcm` IDL file, add it to the `aspn-lcm`
+directory in `aspn-generated`, then run `lcm-gen` to generate a version of ASPN-LCM which contains
+the extension message.'
 
-### **Steps**
+### Option 2: Firehose (At your own risk)
 
-1.   Generate the new aspn-generated locally the steps above.  For example:
-     ```shell
-     python3 generate.py -o ./output --extra-icd-files-dir ./custom_messages --all
-      ```
-2.  Copy the new outputs over the existing ones in the `aspn-generated` subproject in the
-    downstream project.
-    ```shell
-    cp -r ./output/* ../<project>/subprojects/aspn-generated/
-    ```
-3.  Rebuild the downstream project and the new custom messages should be available.
+Another route you could take is to run your custom extension message ICD through firehose. The
+advantage of this approach is that your extension message will be available for every output. The
+disadvantage is firehose is only intended to work on the official core set of ASPN messages. Any
+custom messages may deviate from ASPN's unwritten conventions, causing failures in firehose.
 
-**Note-** Once you are satisfied with the results after testing, if you have push rights for
-`firehose`, you can create a new branch and point at the proper aspn-icd branch with your custom
-messages on it.  Then wait for the CI to build the subsequent `aspn-generated` branch and point
-the `aspn-generated.wrap` `revision` to that new commit in the project.
+If you choose to go this route, there are a couple ways you can get firehose to consume your
+extension messages. One way is to use the `--extra-icd-files-dir` argument when calling
+`generate.py` to pass the path to a directory containing just your extension messages. Another route
+is to push up a new version ASPN-ICD containing your extension messages, then update the version of
+ASPN firehose brings in by modifying the ASPN dependency in `pyproject.toml`.
 
 # Building ASPN-ROS
 
