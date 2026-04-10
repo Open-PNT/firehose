@@ -1,7 +1,7 @@
 FROM ubuntu:22.04
 
 # Necessary to avoid prompts to configure timezone data.
-ENV DEBIAN_FRONTEND noninteractive
+ENV DEBIAN_FRONTEND=noninteractive
 
 # Install common dependencies
 # build-essential: For compiling ASPN-C, etc.
