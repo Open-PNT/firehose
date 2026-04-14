@@ -263,9 +263,9 @@ if not get_option('aspn-cpp-xtensor-py').disabled()
 
     ### Stubgen
 
-    python_with_mypy = import('python').find_installation('python3', modules: ['mypy'], required: false)
+    pybind11_stubgen = find_program('pybind11-stubgen')
 
-    if (python_with_mypy.found())
+    if (pybind11_stubgen.found())
 
         generate_stubs = meson.project_source_root() / 'util' / 'generate_stubs.py'
 
@@ -275,7 +275,7 @@ if not get_option('aspn-cpp-xtensor-py').disabled()
         custom_target('stubs',
                       input : python_bindings_lib,
                       output : ['aspn23_xtensor.pyi' ],
-                      command : [python_with_mypy, generate_stubs, '-paspn23_xtensor', '-o' + meson.current_build_dir()],
+                      command : [pybind11_stubgen, '-o' + meson.current_build_dir(), 'aspn23_xtensor'],
                       env: env,
                       build_by_default : true,
                       install: true,
