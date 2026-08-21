@@ -223,12 +223,16 @@ class AspnCBackend(Backend):
             */
             typedef {ASPN_PREFIX}TypeHeader AspnBase;
 
+            {ASPN_NULLABILITY_MACRO_START}
+
             bool {ASPN_PREFIX_LOWER}_is_core_message(AspnBase* base);
 
             {ASPN_PREFIX}TypeTimestamp {ASPN_PREFIX_LOWER}_get_time(const AspnBase* base);
             void {ASPN_PREFIX_LOWER}_set_time(AspnBase* base, {ASPN_PREFIX}TypeTimestamp time);
 
-            AspnBase* {ASPN_PREFIX_LOWER}_copy_message(AspnBase* base);
+            AspnBase* {ASPN_NULLABLE_MACRO} {ASPN_PREFIX_LOWER}_copy_message(AspnBase* base);
+
+            {ASPN_NULLABILITY_MACRO_END}
 
             #ifdef __cplusplus
             }}  // extern "C"
@@ -273,7 +277,7 @@ class AspnCBackend(Backend):
                 }}
             }}
 
-            AspnBase* {ASPN_PREFIX_LOWER}_copy_message(AspnBase* base) {{
+            AspnBase* {ASPN_NULLABLE_MACRO} {ASPN_PREFIX_LOWER}_copy_message(AspnBase* base) {{
                 switch(base->message_type) {{
                 {aspn_copy_message_cases}
                 default: {{
@@ -289,6 +293,7 @@ class AspnCBackend(Backend):
         format_and_write_to_file(utils_h, output_filepath)
 
         source_contents = utils_c_template.format(
+            ASPN_NULLABLE_MACRO=ASPN_NULLABLE_MACRO,
             ASPN_PREFIX=ASPN_PREFIX,
             ASPN_PREFIX_LOWER=ASPN_PREFIX_LOWER,
             aspn_type_get_time_cases=self.aspn_type_get_time_cases,
