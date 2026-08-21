@@ -28,8 +28,6 @@ class Struct:
         self.struct_fields_buf: List[str] = []
         self.struct_name: str = name_to_struct(snake_case_struct_name)
         self.pointer_fields: List[str] = []
-        self.nullability_macro_start: str = ''
-        self.nullability_macro_end: str = ''
         self.header_template = dedent(f"""
             /*
              * This code is generated via firehose.
@@ -42,7 +40,7 @@ class Struct:
             #ifdef __cplusplus
             extern "C" {{{{
             #endif
-            {{nullability_macro_start}}
+            {ASPN_NULLABILITY_MACRO_START}
             {{enum_defs}}
 
             {{struct_docstr}}
@@ -57,7 +55,7 @@ class Struct:
             {{free_docstr}}
             void {{fn_basename}}_free(void* pointer);
             void {{fn_basename}}_free_members({self.struct_name}* self);
-            {{nullability_macro_end}}
+            {ASPN_NULLABILITY_MACRO_END}
             #ifdef __cplusplus
             }}}}  // extern "C"
             #endif
@@ -91,10 +89,6 @@ class AspnYamlToCHeader(Backend):
             self.structs += [self.current_struct]
         self.current_struct = Struct(snake_case_struct_name)
 
-    def _set_nullability_macro(self):
-        self.nullability_macro_start = f"\n{ASPN_NULLABILITY_MACRO_START}\n"
-        self.nullability_macro_end = f"\n{ASPN_NULLABILITY_MACRO_END}\n"
-
     def generate(self) -> str:
         self.structs += [self.current_struct]
         for struct in self.structs:
@@ -117,8 +111,6 @@ class AspnYamlToCHeader(Backend):
                 includes='\n'.join(struct.includes),
                 fn_basename=struct.fn_basename,
                 fn_params=', '.join(struct.constructor_param_buf),
-                nullability_macro_start=struct.nullability_macro_start,
-                nullability_macro_end=struct.nullability_macro_end,
             )
 
             basename = struct.struct_name.replace(f"{ASPN_PREFIX}", "")
@@ -156,7 +148,6 @@ class AspnYamlToCHeader(Backend):
             self.current_struct.pointer_fields.append(field_name)
             if nullable:
                 f_type = f"{type_name}* {ASPN_NULLABLE_MACRO}"
-                self._set_nullability_macro()
             else:
                 f_type = f"{type_name}*"
 
@@ -208,7 +199,6 @@ class AspnYamlToCHeader(Backend):
         field_str = f"{type_name} {field_name}[{x}][{y}]"
         if isinstance(x, str) and isinstance(y, str):
             if nullable:
-                self._set_nullability_macro()
                 field_str = f"{type_name}* {ASPN_NULLABLE_MACRO} {field_name}"
             else:
                 field_str = f"{type_name}* {field_name}"
